@@ -27,6 +27,13 @@ class CallType(str, Enum, metaclass=ContainsEnumMeta):
     NOT = "__invert__"
     NEG = "__neg__"
 
+
+def builtin_to_ast(o):
+    if isinstance(o, Node): return o
+    if isinstance(o, int): return I64Node(o)
+    if isinstance(o, str): return VarNode(o)
+    raise Exception("Unknown ast conversionm for "+str(o)+" of type "+type(o))
+
 class Node():
     def __init__(self, nodeType: NodeType):
         self.type = nodeType
@@ -36,6 +43,44 @@ class Node():
         return self.__str__()    
     def __eq__(self, other):
         return NotImplementedError()
+    
+    def __add__(self, other):
+        return CallNode(CallType.ADD, [builtin_to_ast(self), builtin_to_ast(other)])
+    def __radd__(self, other):
+        return self.__add__(other)
+    def __sub__(self, other):
+        return CallNode(CallType.SUB, [builtin_to_ast(self), builtin_to_ast(other)])
+    def __rsub__(self, other):
+        return self.__sub__(other)
+    def __mul__(self, other):
+        return CallNode(CallType.MUL, [builtin_to_ast(self), builtin_to_ast(other)])
+    def __rmul__(self, other):
+        return self.__mul__(other)
+    def __and__(self, other):
+        return CallNode(CallType.AND, [builtin_to_ast(self), builtin_to_ast(other)])
+    def __rand__(self, other):
+        return self.__and__(other)
+    def __or__(self, other):
+        return CallNode(CallType.OR, [builtin_to_ast(self), builtin_to_ast(other)])
+    def __ror__(self, other):
+        return self.__or__(other)
+    def __xor__(self, other):
+        return CallNode(CallType.XOR, [builtin_to_ast(self), builtin_to_ast(other)])
+    def __rxor__(self, other):
+        return self.__xor__(other)
+    def __lshift__(self, other):
+        return CallNode(CallType.SHL, [builtin_to_ast(self), builtin_to_ast(other)])
+    def __rlshift__(self, other):
+        return self.__lshift__(other)
+    def __rshift__(self, other):
+        return CallNode(CallType.SHR, [builtin_to_ast(self), builtin_to_ast(other)])
+    def __rrshift__(self, other):
+        return self.__rshift__(other)
+    def __invert__(self):
+        return CallNode(CallType.NOT, [builtin_to_ast(self)])
+    def __neg__(self):
+        return CallNode(CallType.NEG, [builtin_to_ast(self)])
+
 class VarNode(Node):
     def __init__(self, varname: str):
         self.type = NodeType.VAR
@@ -103,7 +148,7 @@ def map_ast_bfs(ast, f):
             r = f[ast.value](*ast.children)
         
         if not isinstance(r, Node):
-            Exception("BFS Results need to be Nodes "+str(r))
+            raise Exception("BFS Results need to be Nodes "+str(r))
 
         if not isinstance(r, CallNode): # return
             return r
@@ -141,7 +186,6 @@ def expr_to_ast(expr):
     else:
         raise Exception("Unknown AST Expression "+str(expr))
 
-
 def eval_ast(ast, varMap):
     I64_MASK = 0xffffffffffffffff
     return map_ast(ast, lambda x: (varMap[x]&I64_MASK), lambda y: (y&I64_MASK), {
@@ -177,3 +221,19 @@ def get_vars_from_ast(ast):
 
 def ast_cost(ast):
     return map_ast(ast, lambda x: 1, lambda y: 1, lambda ct, n: sum(n)+1)
+
+def str_to_ast(astStr, varNames):
+
+    if isinstance(varNames, list):
+        var_dict = {}
+        for var_name in varNames:
+            var_dict[var_name] = VarNode(var_name)
+    elif isinstance(varNames, dict):
+        var_dict = varNames
+    else:
+        raise Exception("Invalid variables provided ", varNames)
+
+    res = eval(astStr, {}, var_dict)
+    if isinstance(res, int):
+        res = I64Node(res)
+    return res

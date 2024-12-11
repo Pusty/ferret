@@ -42,17 +42,16 @@ mba_blast.np.int = int
 
 
 from ..equalityprovider import EqualityProvider
-from ..bitvec import *
-
-
+from ..expressionast import *
+import ast as ast_module
 
 class MBABlastEqualityProviderReference(EqualityProvider):
 
     def __init__(self):
         pass
 
-    def simplify(self, expr: Expr) -> tuple[bool, list[Expr]]:
-        str_expr = expr_to_str(expr, opt=True) 
+    def simplify(self, ast: Node) -> tuple[bool, list[Node]]:
+        str_expr = ast_module.unparse(ast_module.parse(ast_to_str(ast))) 
         #.. mba-blasts parser is too fragile to parse redudant brackets..
         str_expr = str_expr.replace(" ", "")
         
@@ -74,22 +73,10 @@ class MBABlastEqualityProviderReference(EqualityProvider):
         #print("after simplification:   ", simExpre)
 
         # hardcode this for now because this probably won't be used in the final thing anyways
-        a = BitVec.var("a")
-        b = BitVec.var("b")
-        c = BitVec.var("c")
-        d = BitVec.var("d")
-        e = BitVec.var("e")
-        f = BitVec.var("f")
-        x = BitVec.var("x")
-        y = BitVec.var("y")
-        z = BitVec.var("z")
-        t = BitVec.var("t")
+        # in practice we would first need to map to the placeholders and back here
+        var_names = ["a","b","c","d","e","f","x","y","z","t"]
 
-        res = eval(simExpre)
-        # if optimized is just a number
-        if isinstance(res, int):
-            res = BitVec(res)
-
+        res = str_to_ast(simExpre, var_names)
 
         return (True, [res])
 

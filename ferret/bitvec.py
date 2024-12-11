@@ -22,7 +22,7 @@ class BitVec(Expr):
     def __neg__(self) -> BitVec: ...
     
     
-import ast as ast_module
+#import ast as ast_module
 def expr_to_str(expr, opt=True):
     ast = expr_to_ast(expr)
     ast_str = ast_to_str(ast)
@@ -30,10 +30,10 @@ def expr_to_str(expr, opt=True):
         ast_str = ast_module.unparse(ast_module.parse(ast_str))
     return ast_str
 
-def get_vars_from_expr(expr):
-    ast = expr_to_ast(expr)
-    return get_vars_from_ast(ast)
-    # sorted(set(re.findall(r'BitVec\.var\("([^"]+)"\)', str(expr))))
+#def get_vars_from_expr(expr):
+#    ast = expr_to_ast(expr)
+#    return get_vars_from_ast(ast)
+#    # sorted(set(re.findall(r'BitVec\.var\("([^"]+)"\)', str(expr))))
 
 def eval_expr(expr, varMap):
     ast = expr_to_ast(expr)
@@ -44,6 +44,19 @@ def eval_expr(expr, varMap):
         v = v+0x10000000000000000
     return v
 
+def ast_to_expr(ast):
+    var_names = get_vars_from_ast(ast)
+    var_map = {}
+    for var_name in var_names:
+        var_map[var_name] = BitVec.var(var_name)
+    res = eval(ast_to_str(ast), {}, var_map)
+    if isinstance(res, int):
+        if res > 0x7fffffffffffffff:
+            res = res-0x10000000000000000
+        if res < -0x7fffffffffffffff:
+            res = res+0x10000000000000000
+        res = BitVec(res)
+    return res
 
     
 def BitVec_rules() -> list[RewriteOrRule]:

@@ -1,10 +1,8 @@
 
 
 from .equalityprovider import EqualityProvider
-from .bitvec import *
 from .expressionast import *
 
-import ast as ast_module
 import numpy as np
 import sympy
 import itertools
@@ -176,9 +174,8 @@ class MBABlastEqualityProvider(EqualityProvider):
         return l
 
     
-    def simplify(self, expr: Expr) -> tuple[bool, list[Expr]]:
-        ast = expr_to_ast(expr)
-        var_names = get_vars_from_expr(expr)
+    def simplify(self, ast: Node) -> tuple[bool, list[Node]]:
+        var_names = get_vars_from_ast(ast)
         var_amount = len(var_names)
 
         if var_amount == 0:
@@ -188,7 +185,7 @@ class MBABlastEqualityProvider(EqualityProvider):
         if not var_amount in self.basisMap:
             self._generate_basis(var_amount)
 
-        #print(expr_to_ast(expr))
+        #print(ast)
 
         # 1. Split terms, verify only bitwise within subterms (which have a coefficient), make sure it is linear
         # (If not linear or contains arithmetic expressions or constants in logical subexpresisons will throw an exception )
@@ -199,7 +196,7 @@ class MBABlastEqualityProvider(EqualityProvider):
             return (False, [])
         
         
-        #print(expr_to_str(expr))
+        #print(ast)
 
         if not isinstance(split_ast, list):
             split_ast = [split_ast]
@@ -207,7 +204,7 @@ class MBABlastEqualityProvider(EqualityProvider):
         #print(split_ast)
         
         
-        #print([ ast_module.unparse(ast_module.parse(ast_to_str(x)))  for x in  split_ast])
+        #print([x  for x in  split_ast])
 
         # 2. Split terms into coefficient and bitwise expression
         #for ast in split_ast:
@@ -215,14 +212,14 @@ class MBABlastEqualityProvider(EqualityProvider):
         coeff_terms = [self._parse_coefficient(ast) for ast in split_ast]
 
 
-        #print([(cof, ast_module.unparse(ast_module.parse(ast_to_str(x))))  for cof, x in  coeff_terms])
+        #print([(cof, x)  for cof, x in  coeff_terms])
 
         # 3. Turn terms into linear combination of basis vectors
 
         lcbv = None
 
-        for cof, ast in coeff_terms:
-            tt = self._ast_to_truthtable(ast, var_names)
+        for cof, cast in coeff_terms:
+            tt = self._ast_to_truthtable(cast, var_names)
             ct = self._truthtable_to_coefficients(tt, var_amount)
             ctList = []
             for i, v in enumerate(ct):
@@ -235,7 +232,7 @@ class MBABlastEqualityProvider(EqualityProvider):
                 ctExpr = CallNode(CallType.ADD, [ctExpr, ctList[i+1]])
 
             # Constant Terms have negated coefficient
-            if isinstance(ast, I64Node):
+            if isinstance(cast, I64Node):
                 cof = cof * -1
 
             part = CallNode(CallType.MUL, [I64Node(cof), ctExpr])
@@ -258,7 +255,7 @@ class MBABlastEqualityProvider(EqualityProvider):
         # MBA-Blast code implies "**" power can appear?
         ev = str(ev)
         if "**" in ev:
-            raise Exception("Power in MBA-Blast simplified code "+ev+" from "+expr_to_str(expr))
+            raise Exception("Power in MBA-Blast simplified code "+ev+" from "+ast)
         
 
         #print("MBA2:", ev)
@@ -276,16 +273,12 @@ class MBABlastEqualityProvider(EqualityProvider):
         #print("MBA2:", ev)
         # 6. Turn back into expression
             
-        bvVars = {}
-        for bvName in var_names:
-            bvVars[bvName] = BitVec.var(bvName)
-        
-        oexpr = eval(ev, {}, bvVars)
+        oexpr = str_to_ast(ev, var_names)
 
         return (True, [oexpr])
 
-    def failed(self, expr: Expr):
-        #print("Failed to apply MBA-Blast to "+expr_to_str(expr))
+    def failed(self, ast: Node):
+        #print("Failed to apply MBA-Blast to "+ast)
         pass
 
     def name(self) -> str:

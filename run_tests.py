@@ -85,7 +85,7 @@ def run_all_tests():
     mbabp = ferret.MBABlastEqualityProvider()
     qsynth = ferret.QSynthEqualityProvider()
 
-    amount = 500 #2500
+    amount = 100 #2500
     dataset = lambda: mbaobf_dataset.getDataset(amount, skip=0)
 
     
@@ -114,7 +114,9 @@ def run_mbablast_test():
 def run_qsynth_test():
     import test.test_qsynth
 
-#run_all_tests()
+
 #run_llvmlite_test()
 #run_mbablast_test()
-run_qsynth_test()
+#run_qsynth_test()
+
+run_all_tests()

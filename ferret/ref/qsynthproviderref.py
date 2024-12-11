@@ -1,5 +1,4 @@
 from ..equalityprovider import EqualityProvider
-from ..bitvec import *
 from ..expressionast import *
 
 
@@ -35,8 +34,7 @@ class QSynthEqualityProviderReference(EqualityProvider):
     def name(self) -> str:
         return "QSynthEqualityProviderReference"
     
-    def simplify(self, expr) -> tuple[bool, list[Expr]]:
-        oast = expr_to_ast(expr)
+    def simplify(self, oast: Node) -> tuple[bool, list[Node]]:
         var_names = get_vars_from_ast(oast)
 
         ast = self.ctx.getAstContext()
@@ -55,19 +53,7 @@ class QSynthEqualityProviderReference(EqualityProvider):
         #print(f"synthesized expression: {synt_rax.pp_str}")
         #print(f"size: {synt_rax.node_count} -> {synt_rax.node_count}")
 
-
-        bvVars = {}
-        for bvName in var_names:
-            bvVars[bvName] = BitVec.var(bvName)
-        
-        oexpr = eval(synt_rax.pp_str, {}, bvVars)
-        if isinstance(oexpr, int):
-            if oexpr > 0x7fffffffffffffff:
-                oexpr = oexpr-0x10000000000000000
-            if oexpr < -0x7fffffffffffffff:
-                oexpr = oexpr+0x10000000000000000
-            oexpr = BitVec(oexpr)
-
+        oexpr = str_to_ast(synt_rax.pp_str, var_names)
         #print(expr_to_str(expr) ,"=>", expr_to_str(oexpr))
 
         return (True, [oexpr])

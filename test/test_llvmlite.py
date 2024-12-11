@@ -48,7 +48,7 @@ delta_accum = 0
 
 for oexpr in testExpressionSet:
     expr = oexpr
-    success, sexprs = llp.simplify(expr)
+    success, sexprs = llp.simplifyExpr(expr)
 
     if not success:
         print("Failed to simplify ", expr)

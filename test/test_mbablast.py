@@ -28,7 +28,7 @@ def eval_provider(prov):
         expr = dataset[i]
         gexpr = dataset_groundtruth[i]
 
-        success, sexprs = prov.simplify(expr)
+        success, sexprs = prov.simplifyExpr(expr)
 
         if not success:
             print("Failed to simplify ", expr)

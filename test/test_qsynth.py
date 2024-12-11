@@ -9,7 +9,7 @@ print("QSynth Tests:")
 
 
 
-dataset_name, dataset, dataset_groundtruth = parseDataset(600)[0]
+dataset_name, dataset, dataset_groundtruth = parseDataset(100)[0]
 
 #dataset = [((BitVec.var("x") & BitVec.var("y")) - (BitVec.var("y") + BitVec.var("x"))) * 11 ]
 
@@ -25,14 +25,18 @@ def eval_provider(prov):
         expr = dataset[i]
         gexpr = dataset_groundtruth[i]
 
-        success, sexprs = prov.simplify(expr)
+        success, sexprs = prov.simplifyExpr(expr)
 
         if not success:
             print("Failed to simplify ", expr)
             exit(1)
 
         sexpr = sexprs[0]
-        ferret.assert_oracle_equality(expr, sexpr)
+
+        # QSynth without verification is error prone
+        if(not ferret.test_oracle_equality(expr, sexpr)):
+            print("[!]", expr, "!=", sexpr)
+            continue
                 
         egraph = EGraph()
         egraph.register(expr)

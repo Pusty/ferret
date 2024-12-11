@@ -24,13 +24,13 @@ def simplify(egg: EGraph, expr: Expr) -> tuple[Expr, int]:
 
 def apply_eqprov(egg: EGraph, eqprov: EqualityProvider, expr: Expr):
     bef_expr, bef_cost = egg.extract(expr, include_cost=True)
-    success, sexprs = eqprov.simplify(expr)
+    success, sexprs = eqprov.simplifyExpr(expr)
     if success:
         for sexpr in sexprs: 
             egg.register(union(expr).with_(sexpr))
             assert_oracle_equality(expr, sexpr)
     else:
-        eqprov.failed(expr)
+        eqprov.failed(expr_to_ast(expr))
         return None
     aft_expr, aft_cost = egg.extract(expr, include_cost=True)
     return (aft_expr, bef_cost, aft_cost)
@@ -66,7 +66,7 @@ def iter_simplify(egg: EGraph, expr: Expr, eqprovs: list[EqualityProvider]=[], i
 
     return init_cost, last_cost
 
-def assert_oracle_equality(exprA: Expr, exprB: Expr, N=10):
+def test_oracle_equality(exprA: Expr, exprB: Expr, N=10, doAssert=False):
     astA = expr_to_ast(exprA)
     astB = expr_to_ast(exprB)
     varsA = get_vars_from_ast(astA)
@@ -78,8 +78,16 @@ def assert_oracle_equality(exprA: Expr, exprB: Expr, N=10):
             varMap[v] = random.randint(0, 0xffffffffffffffff)
         evalA = eval_expr(exprA, varMap)
         evalB = eval_expr(exprB, varMap)
-        assert evalA  == evalB , expr_to_str(exprA) + " != " + expr_to_str(exprB)+" for "+str(varMap)+" resulting in "+str((evalA, evalB))
+        if doAssert:
+            assert evalA  == evalB , expr_to_str(exprA) + " != " + expr_to_str(exprB)+" for "+str(varMap)+" resulting in "+str((evalA, evalB))
+        else:
+            if evalA != evalB: return False
+    return True
     
+
+def assert_oracle_equality(exprA: Expr, exprB: Expr, N=10):
+    return test_oracle_equality(exprA, exprB, N=N, doAssert=True)
+
 def test_stuff():
     g = create_graph()
     simp, cost = simplify(g, BitVec(5))

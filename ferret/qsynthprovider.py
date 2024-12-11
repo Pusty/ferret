@@ -1,5 +1,4 @@
 from .equalityprovider import EqualityProvider
-from .bitvec import *
 from .expressionast import *
 
 
@@ -27,7 +26,7 @@ class QSynthEqualityProvider(EqualityProvider):
     # https://github.com/quarkslab/qsynthesis/tree/master
     # https://quarkslab.github.io/qsynthesis/dev_doc/table.html
     # qsynthesis-table-manager generate -bs 64 --var-num 3 --ops SUB,NEG,ADD,XOR,OR --watchdog 85 --input-num 15 --random-level 7 test-table
-    def __init__(self):
+    def __init__(self, verify=True, verifyReducedPrecision=True, verifyTimeout=500,verifyEnd=False):
 
         # TODO: Make this database server / client infrastructure so that it can run multiprocess / parallel
         self.table = plyvel.DB(TABLE_PATH)
@@ -39,9 +38,10 @@ class QSynthEqualityProvider(EqualityProvider):
         #print(self.vrs)
         #print(self.inps)
 
-        self.verify = True
-        self.verifyTimeout = 500
-        self.verifyEnd = False
+        self.verify = verify
+        self.verifyReducedPrecision = verifyReducedPrecision
+        self.verifyTimeout = verifyTimeout
+        self.verifyEnd = verifyEnd
 
         assert self.metas["hash_mode"] == "MD5"
         for var, bits in self.vrs:
@@ -69,8 +69,8 @@ class QSynthEqualityProvider(EqualityProvider):
         else:
             return self.table.get(self._hash(outs))
 
-    def failed(self, expr: Expr):
-        print("Failed to apply QSynth to "+expr_to_str(expr))
+    def failed(self, ast: Node):
+        print("Failed to apply QSynth to "+ast)
         pass
 
     def name(self) -> str:
@@ -90,12 +90,11 @@ class QSynthEqualityProvider(EqualityProvider):
             varMap = {}
             for v, bits in self.vrs:
                 if v in var_remapping:
-                    varMap[v] = BitVec.var(var_remapping[v])
+                    varMap[v] = VarNode(var_remapping[v])
                 else:
-                    varMap[v] = BitVec.var("?")
+                    varMap[v] = VarNode("?")
 
-            replaceRes = expr_to_ast(eval(exprLine, varMap))
-
+            replaceRes = str_to_ast(exprLine, varMap)
 
             rejectReplace = False
 
@@ -179,7 +178,7 @@ class QSynthEqualityProvider(EqualityProvider):
         z3Vars = {}
         # Note: This being 8 bit is experimental, should be 64 for full equivalence prove
         for vN in var_names:
-            z3Vars[vN] = z3.BitVec(vN, 8) # especially in safe mode, can we maybe just check if this "also" works for 8 bit so speed it up? (instead of 64 bit)
+            z3Vars[vN] = z3.BitVec(vN, 8 if self.verifyReducedPrecision else 64) # especially in safe mode, can we maybe just check if this "also" works for 8 bit so speed it up? (instead of 64 bit)
         exprA = eval(ast_to_str(astA), z3Vars)
         exprB = eval(ast_to_str(astB), z3Vars)
         solver = z3.Solver()
@@ -191,35 +190,20 @@ class QSynthEqualityProvider(EqualityProvider):
         else:
             return solver.check() in [z3.unsat]
 
-    def simplify(self, expr: Expr) -> tuple[bool, list[Expr]]:
-        ast = expr_to_ast(expr)
+    def simplify(self, ast: Node) -> tuple[bool, list[Node]]:
 
         # remap table vars to expression vars
         simplified = self._synthetize(ast)
         #print("=>", simplified)
 
-        var_names = get_vars_from_ast(simplified)
-        bvVars = {}
-        for bvName in var_names:
-            bvVars[bvName] = BitVec.var(bvName)
-        
-        oexpr = eval(ast_to_str(simplified), {}, bvVars)
-        if isinstance(oexpr, int):
-            if oexpr > 0x7fffffffffffffff:
-                oexpr = oexpr-0x10000000000000000
-            if oexpr < -0x7fffffffffffffff:
-                oexpr = oexpr+0x10000000000000000
-            oexpr = BitVec(oexpr)
-
-
         # Z3 verify overall simplification is correct
         if self.verifyEnd:
             # unsafe quick check is ok here if we only do safe replacements
             if self._verify_ast(ast, simplified, timeout=500, unsafe=True):
-                return (True, [oexpr])
+                return (True, [simplified])
             else:
                 return (False, [])
 
         #print(expr_to_str(expr) ,"=>", expr_to_str(oexpr))
 
-        return (True, [oexpr])
+        return (True, [simplified])

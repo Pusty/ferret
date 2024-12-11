@@ -1,9 +1,6 @@
 from .equalityprovider import EqualityProvider
-from .bitvec import *
 from .expressionast import *
 
-from egglog import *
-from egglog.declarations import *
 import re
 
 import llvmlite.ir as ll
@@ -41,10 +38,8 @@ class LLVMLiteEqualityProvider(EqualityProvider):
         )
 
         
-    def expr_to_ir(self, expr: Expr):
-
-        var_names = get_vars_from_expr(expr)
-        ast = expr_to_ast(expr)
+    def ast_to_ir(self, ast: Node):
+        var_names = get_vars_from_ast(ast)
         #print(ast)
         
         fntype = ll.FunctionType(ll.IntType(64), [ll.IntType(64)]*len(var_names))
@@ -77,7 +72,7 @@ class LLVMLiteEqualityProvider(EqualityProvider):
             mmap = {}
             
             for i in range(len(var_names)):
-                mmap["%."+str(i+1)] = BitVec.var(var_names[i])
+                mmap["%."+str(i+1)] = VarNode(var_names[i])
                 
             infunction = False
             for line in sm:
@@ -91,7 +86,7 @@ class LLVMLiteEqualityProvider(EqualityProvider):
                             return (True, [mmap[findRetVar[0]]])
                         findRetVar = re.findall(r'ret i64 (-?\d+)', line)
                         if len(findRetVar) == 1:
-                            return (True, [BitVec(int(findRetVar[0]))])
+                            return (True, [I64Node(int(findRetVar[0]))])
                         raise LLVMLiteParseException("Malformed ret: "+line) 
                     else:
                         # ignore no signed unwrap flag
@@ -108,12 +103,12 @@ class LLVMLiteEqualityProvider(EqualityProvider):
                             if arg0.startswith("%"):
                                 arg0 = mmap[arg0]
                             else:
-                                arg0 = BitVec(int(arg0))
+                                arg0 = I64Node(int(arg0))
                                 
                             if arg1.startswith("%"):
                                 arg1 = mmap[arg1]
                             else:
-                                arg1 = BitVec(int(arg1))
+                                arg1 = I64Node(int(arg1))
                                 
                             if inst == "add":
                                 mmap[to] = arg0 + arg1
@@ -157,11 +152,11 @@ class LLVMLiteEqualityProvider(EqualityProvider):
 
         
         
-    def simplify(self, expr: Expr) -> tuple[bool, list[Expr]]:
+    def simplify(self, ast: Node) -> tuple[bool, list[Node]]:
 
         #print("IN:", expr_to_str(expr))
 
-        module, var_names = self.expr_to_ir(expr)
+        module, var_names = self.ast_to_ir(ast)
 
         #print(module)
 
