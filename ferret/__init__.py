@@ -6,6 +6,7 @@ from .ref.mbablastproviderref import MBABlastEqualityProviderReference
 from .ref.qsynthproviderref import QSynthEqualityProviderReference
 from .mbablastprovider import MBABlastEqualityProvider
 from .qsynthprovider import QSynthEqualityProvider
+from .qsynthdbserver import startQSynthDBServer, stopQSynthDBServer
 from .ferret import * 
 
 

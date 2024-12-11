@@ -79,21 +79,27 @@ def benchmark_eqprovs(dataset_generator, equalityprovders, totalsamples=-1):
         print("\t", "Simplification to", (end_value_accum/start_value_accum)*100, "%")
         print("\t", "Groundtruth would be ", (groundtruth_accum/start_value_accum)*100, "%")
 
-
 def run_all_tests():
     llp = ferret.LLVMLiteEqualityProvider()
     mbabp = ferret.MBABlastEqualityProvider()
-    qsynth = ferret.QSynthEqualityProvider()
 
-    amount = 100 #2500
+    ferret.startQSynthDBServer()
+    qsynth = ferret.QSynthEqualityProvider(dbserver=True)
+
+    amount = 1000 #2500
     dataset = lambda: mbaobf_dataset.getDataset(amount, skip=0)
 
     
-    
-    #benchmark_eqprovs(dataset(), [], amount)
-    #benchmark_eqprovs(dataset(), [llp], amount)
-    #benchmark_eqprovs(dataset(), [mbabp], amount)
-    #benchmark_eqprovs(dataset(), [llp, mbabp], amount)
+    benchmark_eqprovs(dataset(), [], amount)
+    benchmark_eqprovs(dataset(), [llp], amount)
+    benchmark_eqprovs(dataset(), [mbabp], amount)
+    benchmark_eqprovs(dataset(), [qsynth], amount)
+    benchmark_eqprovs(dataset(), [llp, mbabp], amount)
+    benchmark_eqprovs(dataset(), [qsynth, llp], amount)
+    benchmark_eqprovs(dataset(), [qsynth, mbabp], amount)
+    benchmark_eqprovs(dataset(), [qsynth, mbabp, llp], amount)
+
+    ferret.stopQSynthDBServer()
 
     #test_eqprovs(dataset(), [])
     #test_eqprovs(dataset(), [llp])
@@ -101,9 +107,9 @@ def run_all_tests():
     #test_eqprovs(dataset(), [llp, mbabp])
 
     #test_eqprovs(dataset(), [qsynth])
-    test_eqprovs(dataset(), [llp, qsynth])
-    test_eqprovs(dataset(), [mbabp, qsynth])
-    test_eqprovs(dataset(), [llp, mbabp, qsynth])
+    #test_eqprovs(dataset(), [llp, qsynth])
+    #test_eqprovs(dataset(), [mbabp, qsynth])
+    #test_eqprovs(dataset(), [llp, mbabp, qsynth])
 
 def run_llvmlite_test():
     import test.test_llvmlite

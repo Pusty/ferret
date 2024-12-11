@@ -26,27 +26,37 @@ class QSynthEqualityProvider(EqualityProvider):
     # https://github.com/quarkslab/qsynthesis/tree/master
     # https://quarkslab.github.io/qsynthesis/dev_doc/table.html
     # qsynthesis-table-manager generate -bs 64 --var-num 3 --ops SUB,NEG,ADD,XOR,OR --watchdog 85 --input-num 15 --random-level 7 test-table
-    def __init__(self, verify=True, verifyReducedPrecision=True, verifyTimeout=500,verifyEnd=False):
+    def __init__(self, dbserver=False, verify=True, verifyReducedPrecision=True, verifyTimeout=500,verifyEnd=False):
 
-        # TODO: Make this database server / client infrastructure so that it can run multiprocess / parallel
-        self.table = plyvel.DB(TABLE_PATH)
-        self.metas = json.loads(self.table.get(META_KEY))
-        self.vrs = list(json.loads(self.table.get(VARS_KEY)).items())
-        self.inps = json.loads(self.table.get(INPUTS_KEY))
+        # if using dbserver, connect to Manager when actually trying to simplify
+        self.dbserver = dbserver
+        if dbserver == False:
+            self.table = plyvel.DB(TABLE_PATH)
+            self.metas = json.loads(self.table.get(META_KEY))
+            self.vrs = list(json.loads(self.table.get(VARS_KEY)).items())
+            self.inps = json.loads(self.table.get(INPUTS_KEY))
 
-        #print(self.metas)
-        #print(self.vrs)
-        #print(self.inps)
+            assert self.metas["hash_mode"] == "MD5"
+            for var, bits in self.vrs:
+                assert bits == 64
+        else:
+            self.table = None
+            self.metas = None
+            self.vrs = None
+            self.inps = None
 
         self.verify = verify
         self.verifyReducedPrecision = verifyReducedPrecision
         self.verifyTimeout = verifyTimeout
         self.verifyEnd = verifyEnd
 
-        assert self.metas["hash_mode"] == "MD5"
-        for var, bits in self.vrs:
-            assert bits == 64
-
+    def _verify_connected(self):
+        if self.dbserver and self.table == None:
+            from .qsynthdbserver import connectQSynthProvider
+            connectQSynthProvider(self)
+            assert self.metas["hash_mode"] == "MD5"
+            for var, bits in self.vrs:
+                assert bits == 64
 
     def _hash(self, outs):
         # hash the values to make table keys
@@ -191,6 +201,8 @@ class QSynthEqualityProvider(EqualityProvider):
             return solver.check() in [z3.unsat]
 
     def simplify(self, ast: Node) -> tuple[bool, list[Node]]:
+
+        self._verify_connected() # check if connected to db if needed
 
         # remap table vars to expression vars
         simplified = self._synthetize(ast)
