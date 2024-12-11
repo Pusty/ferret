@@ -83,21 +83,27 @@ def benchmark_eqprovs(dataset_generator, equalityprovders, totalsamples=-1):
 def run_all_tests():
     llp = ferret.LLVMLiteEqualityProvider()
     mbabp = ferret.MBABlastEqualityProvider()
+    qsynth = ferret.QSynthEqualityProvider()
 
-    amount = 2500
+    amount = 500 #2500
     dataset = lambda: mbaobf_dataset.getDataset(amount, skip=0)
 
     
     
-    benchmark_eqprovs(dataset(), [], amount)
-    benchmark_eqprovs(dataset(), [llp], amount)
-    benchmark_eqprovs(dataset(), [mbabp], amount)
-    benchmark_eqprovs(dataset(), [llp, mbabp], amount)
+    #benchmark_eqprovs(dataset(), [], amount)
+    #benchmark_eqprovs(dataset(), [llp], amount)
+    #benchmark_eqprovs(dataset(), [mbabp], amount)
+    #benchmark_eqprovs(dataset(), [llp, mbabp], amount)
 
     #test_eqprovs(dataset(), [])
     #test_eqprovs(dataset(), [llp])
     #test_eqprovs(dataset(), [mbabp])
     #test_eqprovs(dataset(), [llp, mbabp])
+
+    #test_eqprovs(dataset(), [qsynth])
+    test_eqprovs(dataset(), [llp, qsynth])
+    test_eqprovs(dataset(), [mbabp, qsynth])
+    test_eqprovs(dataset(), [llp, mbabp, qsynth])
 
 def run_llvmlite_test():
     import test.test_llvmlite
@@ -105,6 +111,10 @@ def run_llvmlite_test():
 def run_mbablast_test():
     import test.test_mbablast
 
-run_all_tests()
+def run_qsynth_test():
+    import test.test_qsynth
+
+#run_all_tests()
 #run_llvmlite_test()
 #run_mbablast_test()
+run_qsynth_test()

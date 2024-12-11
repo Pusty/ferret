@@ -1,0 +1,73 @@
+from ..equalityprovider import EqualityProvider
+from ..bitvec import *
+from ..expressionast import *
+
+
+import os
+PROJECT_PATH = os.getcwd()
+TABLE_PATH = os.path.join(PROJECT_PATH,"qsynth_table", "test_table")
+
+
+
+class QSynthEqualityProviderReference(EqualityProvider):
+
+    # https://github.com/quarkslab/qsynthesis/tree/master
+    # https://quarkslab.github.io/qsynthesis/dev_doc/table.html
+    def __init__(self):
+        from triton import TritonContext, ARCH, SOLVER, MODE, AST_REPRESENTATION
+        self.ctx = TritonContext(ARCH.X86_64)
+        self.ctx.setSolver(SOLVER.Z3)
+        self.ctx.setMode(MODE.ALIGNED_MEMORY, True)
+        self.ctx.setMode(MODE.AST_OPTIMIZATIONS, True)
+        self.ctx.setMode(MODE.CONSTANT_FOLDING, True)
+        self.ctx.setMode(MODE.ONLY_ON_SYMBOLIZED, True)
+        self.ctx.setAstRepresentationMode(AST_REPRESENTATION.PYTHON)
+
+        from qsynthesis import TopDownSynthesizer, InputOutputOracleLevelDB
+        self.table = InputOutputOracleLevelDB.load(TABLE_PATH)
+        self.synthesizer = TopDownSynthesizer(self.table) 
+
+
+    def failed(self, expr):
+        print("Failed to apply QSynth Reference to "+expr)
+        pass
+
+    def name(self) -> str:
+        return "QSynthEqualityProviderReference"
+    
+    def simplify(self, expr) -> tuple[bool, list[Expr]]:
+        oast = expr_to_ast(expr)
+        var_names = get_vars_from_ast(oast)
+
+        ast = self.ctx.getAstContext()
+
+        var_dict = {}
+        for var_name in var_names:
+            var_dict[var_name] = ast.variable(self.ctx.newSymbolicVariable(64, var_name))
+
+        tritonExpr = eval(ast_to_str(oast), {}, var_dict) + ast.bv(0, 64)
+        from qsynthesis import TritonAst
+        tritonAst = TritonAst.make_ast(self.ctx, tritonExpr)
+
+        synt_rax, simp_bool = self.synthesizer.synthesize(tritonAst)
+
+        #print(f"simplified: {simp_bool}")
+        #print(f"synthesized expression: {synt_rax.pp_str}")
+        #print(f"size: {synt_rax.node_count} -> {synt_rax.node_count}")
+
+
+        bvVars = {}
+        for bvName in var_names:
+            bvVars[bvName] = BitVec.var(bvName)
+        
+        oexpr = eval(synt_rax.pp_str, {}, bvVars)
+        if isinstance(oexpr, int):
+            if oexpr > 0x7fffffffffffffff:
+                oexpr = oexpr-0x10000000000000000
+            if oexpr < -0x7fffffffffffffff:
+                oexpr = oexpr+0x10000000000000000
+            oexpr = BitVec(oexpr)
+
+        #print(expr_to_str(expr) ,"=>", expr_to_str(oexpr))
+
+        return (True, [oexpr])

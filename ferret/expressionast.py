@@ -3,6 +3,7 @@ from egglog.declarations import *
 from egglog.runtime import *
 from enum import Enum, EnumMeta
 
+import ast as ast_module
 
 class ContainsEnumMeta(EnumMeta):  
     def __contains__(cls, item): 
@@ -33,7 +34,8 @@ class Node():
         return [self.type][key]
     def __repr__(self):
         return self.__str__()    
-
+    def __eq__(self, other):
+        return NotImplementedError()
 class VarNode(Node):
     def __init__(self, varname: str):
         self.type = NodeType.VAR
@@ -42,7 +44,10 @@ class VarNode(Node):
         return [self.type, self.value][key]
     def __str__(self):
         return str(self.value)
-
+    def __eq__(self, other):
+        if isinstance(other, VarNode):
+            return self.type == other.type and self.value == other.value
+        return False
 class I64Node(Node):
     def __init__(self, value: int):
         self.type = NodeType.I64
@@ -51,7 +56,10 @@ class I64Node(Node):
         return [self.type, self.value][key]
     def __str__(self):
         return str(self.value)
-
+    def __eq__(self, other):
+        if isinstance(other, I64Node):
+            return self.type == other.type and self.value == other.value
+        return False
 class CallNode(Node):
     def __init__(self, callType: CallType, nodes: list[Node]):
         self.type = NodeType.CALL
@@ -60,48 +68,49 @@ class CallNode(Node):
     def __getitem__(self, key):
         return [self.type, self.value, self.children][key]
     def __str__(self):
-        nodes = []
-        for arg in self.children:
-            nodes.append(str(arg))
-        if self.value == CallType.ADD:
-            return nodes[0]+"+"+nodes[1]
-        elif self.value == CallType.SUB:
-            return nodes[0]+"-"+nodes[1]
-        elif self.value == CallType.MUL:
-            return nodes[0]+"*"+nodes[1]
-        elif self.value == CallType.AND:
-            return nodes[0]+"&"+nodes[1]
-        elif self.value == CallType.OR:
-            return nodes[0]+"|"+nodes[1]
-        elif self.value == CallType.XOR:
-            return nodes[0]+"^"+nodes[1]
-        elif self.value == CallType.SHL:
-            return nodes[0]+"<<"+nodes[1]
-        elif self.value == CallType.SHR:
-            return nodes[0]+">>"+nodes[1]
-        elif self.value == CallType.NOT:
-            return "~"+nodes[0]
-        elif self.value == CallType.NEG:
-            return "-"+nodes[0]
-        else:
-            raise Exception("Not handled __str__ for "+self.value)
-
+        return ast_module.unparse(ast_module.parse(ast_to_str(self))) 
+    
+    def __eq__(self, other):
+        if isinstance(other, CallNode):
+            return self.type == other.type and self.value == other.value and self.children == other.children
+        return False
 
 def map_ast(ast, f_var, f_i64, f_call):
-    if ast[0] == NodeType.VAR:
-        return f_var(ast[1])
-    elif ast[0] == NodeType.I64:
-        return f_i64(ast[1])
-    elif ast[0] == NodeType.CALL:
+    if isinstance(ast, VarNode):
+        return f_var(ast.value)
+    elif isinstance(ast, I64Node):
+        return f_i64(ast.value)
+    elif isinstance(ast, CallNode):
         nodes = []
-        for arg in ast[2]:
+        for arg in ast.children:
             nodes.append(map_ast(arg, f_var, f_i64, f_call))
         if callable(f_call):
-            return f_call(ast[1], nodes)
+            return f_call(ast.value, nodes)
         else:
-            return f_call[ast[1]](*nodes)
+            return f_call[ast.value](*nodes)
     else:
-        raise Exception("Unknown AST node "+str(ast[0]))
+        raise Exception("Unknown AST node "+str(ast))
+    
+def map_ast_bfs(ast, f):
+    if isinstance(ast, VarNode):
+        return ast
+    elif isinstance(ast, I64Node):
+        return ast
+    elif isinstance(ast, CallNode):
+        if callable(f):
+            r = f(ast.value, ast.children)
+        else:
+            r = f[ast.value](*ast.children)
+        
+        if not isinstance(r, Node):
+            Exception("BFS Results need to be Nodes "+str(r))
+
+        if not isinstance(r, CallNode): # return
+            return r
+        else: # map children
+            return CallNode(r.value, [map_ast_bfs(arg, f) for arg in r.children])
+    else:
+        raise Exception("Unknown AST node "+str(ast))
 
 
 def expr_to_ast(expr):
@@ -126,7 +135,9 @@ def expr_to_ast(expr):
             return CallNode(expr.callable.method_name, pargs)
         else:
             raise Exception("Unknown AST Decl "+str(expr))
-
+     # this is unrelated to egglog internals and just a possible edge case of eval based program I'm doing
+    elif(isinstance(expr, int)):
+        return I64Node(expr)
     else:
         raise Exception("Unknown AST Expression "+str(expr))
 
@@ -140,14 +151,29 @@ def eval_ast(ast, varMap):
         CallType.AND: lambda a, b: (a&b),
         CallType.OR: lambda a, b: (a|b),
         CallType.XOR: lambda a, b: (a^b),
-        CallType.SHL: lambda a, b: (a<<b)&I64_MASK,
+        CallType.SHL: lambda a, b: (a<<min(b, 64))&I64_MASK,
         CallType.SHR: lambda a, b: (a>>b),
         CallType.NOT: lambda a: (~a)&I64_MASK,
         CallType.NEG: lambda a: (-a)&I64_MASK
     })
 
 def ast_to_str(ast):
-    return map_ast(ast, lambda x: str(x), lambda y: "("+str(y)+")", lambda ct, n: "("+str(CallNode(ct, n))+")")
+    return map_ast(ast, lambda x: str(x), lambda y: "("+str(y)+")", {
+        CallType.ADD: lambda a, b: "("+a+"+"+b+")",
+        CallType.SUB: lambda a, b: "("+a+"-"+b+")",
+        CallType.MUL: lambda a, b: "("+a+"*"+b+")",
+        CallType.AND: lambda a, b: "("+a+"&"+b+")",
+        CallType.OR: lambda a, b: "("+a+"|"+b+")",
+        CallType.XOR: lambda a, b: "("+a+"^"+b+")",
+        CallType.SHL: lambda a, b: "("+a+"<<"+b+")",
+        CallType.SHR: lambda a, b: "("+a+">>"+b+")",
+        CallType.NOT: lambda a: "(~"+a+")",
+        CallType.NEG: lambda a: "(-"+a+")"
+    })
+
 
 def get_vars_from_ast(ast):
     return sorted(set(map_ast(ast, lambda x: [x], lambda y: [], lambda ct, n: sum(n, []))))
+
+def ast_cost(ast):
+    return map_ast(ast, lambda x: 1, lambda y: 1, lambda ct, n: sum(n)+1)

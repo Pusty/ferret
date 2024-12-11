@@ -3,7 +3,9 @@ from .expressionast import *
 from .equalityprovider import *
 from .llvmliteprovider import LLVMLiteEqualityProvider
 from .ref.mbablastproviderref import MBABlastEqualityProviderReference
+from .ref.qsynthproviderref import QSynthEqualityProviderReference
 from .mbablastprovider import MBABlastEqualityProvider
+from .qsynthprovider import QSynthEqualityProvider
 from .ferret import * 
 
 
