@@ -4,6 +4,7 @@ from .equalityprovider import *
 from .llvmliteprovider import LLVMLiteEqualityProvider
 from .ref.mbablastproviderref import MBABlastEqualityProviderReference
 from .ref.qsynthproviderref import QSynthEqualityProviderReference
+from .ref.simbdaproviderref import SiMBAEqualityProviderReference
 from .mbablastprovider import MBABlastEqualityProvider
 from .qsynthprovider import QSynthEqualityProvider
 from .qsynthdbserver import startQSynthDBServer, stopQSynthDBServer
