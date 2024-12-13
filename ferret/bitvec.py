@@ -4,6 +4,7 @@ from egglog.declarations import *
 
 from .expressionast import *
 
+
 class BitVec(Expr):
     def __init__(self, value: i64) -> None: ...
 
@@ -30,10 +31,6 @@ def expr_to_str(expr, opt=True):
         ast_str = ast_module.unparse(ast_module.parse(ast_str))
     return ast_str
 
-#def get_vars_from_expr(expr):
-#    ast = expr_to_ast(expr)
-#    return get_vars_from_ast(ast)
-#    # sorted(set(re.findall(r'BitVec\.var\("([^"]+)"\)', str(expr))))
 
 def eval_expr(expr, varMap):
     ast = expr_to_ast(expr)
@@ -44,6 +41,31 @@ def eval_expr(expr, varMap):
         v = v+0x10000000000000000
     return v
 
+def ast_to_expr(ast):
+    def adjust_const(val):
+        if val > 0x7fffffffffffffff:
+            val = val-0x10000000000000000
+        if val < -0x7fffffffffffffff:
+            val = val+0x10000000000000000
+        return val
+    
+    return map_ast(ast,
+        lambda var: BitVec.var(var), 
+        lambda val: BitVec(adjust_const(val)), {
+        CallType.ADD: lambda a, b: (a+b),
+        CallType.SUB: lambda a, b: (a-b),
+        CallType.MUL: lambda a, b: (a*b),
+        CallType.AND: lambda a, b: (a&b),
+        CallType.OR: lambda a, b: (a|b),
+        CallType.XOR: lambda a, b: (a^b),
+        CallType.SHL: lambda a, b: (a<<b),
+        CallType.SHR: lambda a, b: (a>>b),
+        CallType.NOT: lambda a: (~a),
+        CallType.NEG: lambda a: (-a)
+    })
+
+
+"""
 def ast_to_expr(ast):
     var_names = get_vars_from_ast(ast)
     var_map = {}
@@ -57,7 +79,97 @@ def ast_to_expr(ast):
             res = res+0x10000000000000000
         res = BitVec(res)
     return res
+"""
 
+import itertools
+import json
+
+def _traverse_egraph_nodes(nodes, cur, eclasses, nodeclass, seen, subexprs, maxexprs):
+    if cur in seen: return
+    if maxexprs != -1 and len(subexprs) >= maxexprs: return
+    # don't travel the same path twice
+    seen = seen | set([cur])
+    # for every node in this equivalence class
+    for node in eclasses[cur]:
+        # all products of child equivalent classes
+        for args in itertools.product(*[_traverse_egraph_nodes(nodes, nodeclass[child], eclasses, nodeclass, seen, subexprs, maxexprs) for child in nodes[node]["children"]]):
+            r = (nodes[node]["op"], args)
+            # add subexprs to output set
+            subexprs.add(r)
+            # yield for one layer up in recursion
+            yield r
+
+def _json_to_expr(subexpr):
+    f, arg = subexpr
+    
+    if not f.startswith("BitVec"):
+        if f.startswith('"'): # var
+            return f[1:-1]
+        else: # or num
+            return int(f)
+    elif f == "BitVec___add__":
+        return _json_to_expr(arg[0]) + _json_to_expr(arg[1])
+    elif f == "BitVec___sub__":
+        return _json_to_expr(arg[0]) - _json_to_expr(arg[1])
+    elif f == "BitVec___mul__":
+        return _json_to_expr(arg[0]) * _json_to_expr(arg[1])
+    elif f == "BitVec___and__":
+        return _json_to_expr(arg[0]) & _json_to_expr(arg[1])
+    elif f == "BitVec___or__":
+        return _json_to_expr(arg[0]) | _json_to_expr(arg[1])
+    elif f == "BitVec___xor__":
+        return _json_to_expr(arg[0]) ^ _json_to_expr(arg[1])
+    elif f == "BitVec___lshift__":
+        return _json_to_expr(arg[0]) << _json_to_expr(arg[1])
+    elif f == "BitVec___rshift__":
+        return _json_to_expr(arg[0]) >> _json_to_expr(arg[1])
+    elif f == "BitVec___invert__":
+        return ~_json_to_expr(arg[0])
+    elif f == "BitVec___neg__":
+        return -_json_to_expr(arg[0])
+    elif f == "BitVec___init__":
+        return BitVec(_json_to_expr(arg[0]))
+    elif f == "BitVec_var":
+        return BitVec.var(_json_to_expr(arg[0]))
+            
+    else:
+        raise Exception("Invalid function", f)
+        
+# extremely inefficient as we get the egraph as json
+# then need to get the subexpressions
+# then need to convert back to python
+def egg_extract_all_subexpr(egg, rootExpr, maxexprs=-1):
+    _root = egg._state.typed_expr_to_egg(expr_parts(rootExpr))
+
+    json_egraph = egg._egraph.serialize([_root],
+        max_functions=None,
+        max_calls_per_function=None,
+        include_temporary_functions=False).to_json()
+    #print(json_egraph)
+    json_egraph = json.loads(json_egraph)
+
+    # start extracting subexpr from here
+    root = json_egraph["root_eclasses"][0]
+    eclasses = {}
+    nodeclass = {}
+    for cl in json_egraph["class_data"]:
+        eclasses[cl] = set()
+        
+    for nodeID in json_egraph["nodes"]:
+        node = json_egraph["nodes"][nodeID]
+        eclasses[node["eclass"]].add(nodeID)
+        nodeclass[nodeID]= node["eclass"]
+    
+    subexprs = set()
+    # fill the subexprs set
+    for r in _traverse_egraph_nodes(json_egraph["nodes"], root, eclasses,nodeclass, set(), subexprs, maxexprs):
+        pass
+
+    for r in subexprs:
+        # skip raw numbers and var names
+        if not r[0].startswith("BitVec"): continue
+        yield _json_to_expr(r)
+        
     
 def BitVec_rules() -> list[RewriteOrRule]:
     x, y, z = vars_("x y z", BitVec)

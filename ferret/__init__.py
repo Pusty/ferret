@@ -4,7 +4,7 @@ from .equalityprovider import *
 from .llvmliteprovider import LLVMLiteEqualityProvider
 from .ref.mbablastproviderref import MBABlastEqualityProviderReference
 from .ref.qsynthproviderref import QSynthEqualityProviderReference
-from .ref.simbdaproviderref import SiMBAEqualityProviderReference
+from .ref.simbaproviderref import SiMBAEqualityProviderReference
 from .mbablastprovider import MBABlastEqualityProvider
 from .qsynthprovider import QSynthEqualityProvider
 from .qsynthdbserver import startQSynthDBServer, stopQSynthDBServer
@@ -21,3 +21,7 @@ def egglog_fixeq(self, other: object) -> bool:
 
 import egglog
 egglog.declarations.CallDecl.__eq__ = egglog_fixeq
+
+# Make display() just generate the html
+import graphviz.backend.viewing as viewing
+viewing.view = lambda x: 0

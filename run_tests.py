@@ -22,13 +22,17 @@ def test_eqprovs_sample(sample, equalityprovders):
 
     # Apply (max) 8 runs of rules and equality providers then get cost out
     egg = ferret.create_graph()
-    ferret.iter_simplify(egg, expr, equalityprovders, 4)
+
+
+    #ferret.iter_simplify(egg, expr, equalityprovders, 4)
+    ferret.all_simplify(egg, expr, equalityprovders, 3)
+
+
     expr_out, cost_after = egg.extract(expr, include_cost=True)
 
     # Verify expressions through testing random values
     ferret.assert_oracle_equality(gexpr, expr_out)
     return (cost_groundtruth, cost_before, cost_after)
-
 
 
 def test_eqprovs(dataset_generator, equalityprovders):
@@ -93,18 +97,19 @@ def run_all_tests():
 
     simbaref = ferret.SiMBAEqualityProviderReference()
 
-    amount = 2000
+    amount = 10
     dataset = lambda: mbaobf_dataset.getDataset(amount, skip=0)
 
 
 
-    
+
     benchmark_eqprovs(dataset(), [], amount)
     benchmark_eqprovs(dataset(), [llp], amount)
     benchmark_eqprovs(dataset(), [mbabp], amount)
     benchmark_eqprovs(dataset(), [qsynth], amount)
     benchmark_eqprovs(dataset(), [simbaref], amount)
 
+    """
     benchmark_eqprovs(dataset(), [llp, mbabp], amount)
     benchmark_eqprovs(dataset(), [qsynth, llp], amount)
     benchmark_eqprovs(dataset(), [qsynth, mbabp], amount)
@@ -119,8 +124,8 @@ def run_all_tests():
     benchmark_eqprovs(dataset(), [qsynth, mbabp, simbaref], amount)
 
     benchmark_eqprovs(dataset(), [qsynth, mbabp, llp, simbaref], amount)
+    """
 
-    ferret.stopQSynthDBServer()
 
     #test_eqprovs(dataset(), [])
     #test_eqprovs(dataset(), [llp])
@@ -131,6 +136,8 @@ def run_all_tests():
     #test_eqprovs(dataset(), [llp, qsynth])
     #test_eqprovs(dataset(), [mbabp, qsynth])
     #test_eqprovs(dataset(), [llp, mbabp, qsynth])
+
+    ferret.stopQSynthDBServer()
 
 def run_llvmlite_test():
     import test.test_llvmlite
@@ -149,4 +156,15 @@ def run_simba_test():
 #run_qsynth_test()
 #run_simba_test()
 
-run_all_tests()
+#run_all_tests()
+
+
+import cProfile as profile
+import pstats
+
+pr = profile.Profile()
+pr.runcall(run_all_tests)
+
+st = pstats.Stats(pr)
+st.sort_stats('cumtime')
+st.print_stats() # and other methods like print_callees, print_callers, etc.

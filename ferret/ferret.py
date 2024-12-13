@@ -22,8 +22,8 @@ def simplify(egg: EGraph, expr: Expr) -> tuple[Expr, int]:
     simp = egg.extract(expr, include_cost=True)
     return simp
 
+
 def apply_eqprov(egg: EGraph, eqprov: EqualityProvider, expr: Expr):
-    bef_expr, bef_cost = egg.extract(expr, include_cost=True)
     success, sexprs = eqprov.simplifyExpr(expr)
     if success:
         for sexpr in sexprs: 
@@ -31,15 +31,14 @@ def apply_eqprov(egg: EGraph, eqprov: EqualityProvider, expr: Expr):
             assert_oracle_equality(expr, sexpr)
     else:
         eqprov.failed(expr_to_ast(expr))
-        return None
-    aft_expr, aft_cost = egg.extract(expr, include_cost=True)
-    return (aft_expr, bef_cost, aft_cost)
+
+
     
 def iter_simplify(egg: EGraph, expr: Expr, eqprovs: list[EqualityProvider]=[], inner_max: int=20, max_nodes: int=25000):
     init_cost = cost(egg, expr)
 
     for eqprov in eqprovs:
-        v = apply_eqprov(egg, eqprov, expr)
+        apply_eqprov(egg, eqprov, expr)
 
     last_amount_nodes = 0
     last_cost = cost(egg, expr)
@@ -49,14 +48,15 @@ def iter_simplify(egg: EGraph, expr: Expr, eqprovs: list[EqualityProvider]=[], i
         expr, last_cost = simplify(egg, expr)
 
         for eqprov in eqprovs:
-            v = apply_eqprov(egg, eqprov, expr)
+            apply_eqprov(egg, eqprov, expr)
  
         last_cost = cost(egg, expr)
 
-        p = json.loads(egg._egraph.serialize([],
+        pjson = egg._egraph.serialize([],
             max_functions=None,
             max_calls_per_function=None,
-            include_temporary_functions=False).to_json())
+            include_temporary_functions=False).to_json()
+        p = json.loads(pjson)
         amount_nodes = len(p["nodes"])
         # probably explodes
         if amount_nodes > max_nodes: break
@@ -64,6 +64,48 @@ def iter_simplify(egg: EGraph, expr: Expr, eqprovs: list[EqualityProvider]=[], i
         if last_amount_nodes == amount_nodes: break
         last_amount_nodes = amount_nodes
 
+    return init_cost, last_cost
+
+def all_simplify(egg: EGraph, expr: Expr, eqprovs: list[EqualityProvider]=[], inner_max: int=5, max_nodes: int=500):
+    init_cost = cost(egg, expr)
+
+
+    already = set()
+    last_amount_nodes = 0
+    #_draw = []
+
+    for i in range(inner_max):
+
+        if len(eqprovs) > 0:
+            j = 0
+            for subexpr in egg_extract_all_subexpr(egg, expr, -1):
+                uid = hash(str(subexpr))
+                if uid in already: continue
+                already.add(uid)
+                for eqprov in eqprovs:
+                    apply_eqprov(egg, eqprov, subexpr)
+                j += 1
+            print("Procecced ",j,"new subexpressions")
+        egg.run(1)
+
+               
+        pjson = egg._egraph.serialize([],
+            max_functions=None,
+            max_calls_per_function=None,
+            include_temporary_functions=False).to_json()
+        p = json.loads(pjson)
+        #_draw.append(pjson)
+        amount_nodes = len(p["nodes"])
+        # probably explodes
+        if amount_nodes > max_nodes or len(already) > max_nodes*2: break
+        # saturated
+        if last_amount_nodes == amount_nodes: break
+        last_amount_nodes = amount_nodes
+
+    #from egglog.visualizer_widget import VisualizerWidget 
+    #VisualizerWidget(egraphs=_draw).display_or_open()
+
+    last_cost = cost(egg, expr)
     return init_cost, last_cost
 
 def test_oracle_equality(exprA: Expr, exprB: Expr, N=10, doAssert=False):
