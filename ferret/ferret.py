@@ -66,26 +66,40 @@ def iter_simplify(egg: EGraph, expr: Expr, eqprovs: list[EqualityProvider]=[], i
 
     return init_cost, last_cost
 
-def all_simplify(egg: EGraph, expr: Expr, eqprovs: list[EqualityProvider]=[], inner_max: int=5, max_nodes: int=500):
+def all_simplify(egg: EGraph, expr: Expr, eqprovs: list[EqualityProvider]=[], inner_max: int=5, max_nodes: int=500, max_subexpr: int=250):
     init_cost = cost(egg, expr)
 
 
     already = set()
+    processed = 0
     last_amount_nodes = 0
     #_draw = []
 
     for i in range(inner_max):
 
         if len(eqprovs) > 0:
-            j = 0
-            for subexpr in egg_extract_all_subexpr(egg, expr, -1):
-                uid = hash(str(subexpr))
+            options = []
+            for subexpr in egg_extract_all_subexpr(egg, expr, 100000):
+                uid = hash(subexpr)
                 if uid in already: continue
                 already.add(uid)
+                options.append(subexpr)
+            
+            # limit the amount of (new) subexpressions to process
+            # TODO: If this stays, seed this to make it deterministic
+            # Ideally we wouldn't want to limit this at all, but
+            # the amount of connection explodes fast
+            if max_subexpr != -1:
+                import random
+                random.shuffle(options)
+                options = options[:max_subexpr]
+
+            for option in options:
                 for eqprov in eqprovs:
-                    apply_eqprov(egg, eqprov, subexpr)
-                j += 1
-            print("Procecced ",j,"new subexpressions")
+                    apply_eqprov(egg, eqprov, egg_json_to_expr(option))
+
+            processed += len(options)
+            #print("Procecced ",len(options),"new subexpressions out of ", len(already), "( last node count: ",last_amount_nodes,")")
         egg.run(1)
 
                
@@ -97,7 +111,7 @@ def all_simplify(egg: EGraph, expr: Expr, eqprovs: list[EqualityProvider]=[], in
         #_draw.append(pjson)
         amount_nodes = len(p["nodes"])
         # probably explodes
-        if amount_nodes > max_nodes or len(already) > max_nodes*2: break
+        if amount_nodes > max_nodes or processed > max_nodes*2: break
         # saturated
         if last_amount_nodes == amount_nodes: break
         last_amount_nodes = amount_nodes

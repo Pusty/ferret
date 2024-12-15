@@ -84,15 +84,16 @@ def ast_to_expr(ast):
 import itertools
 import json
 
-def _traverse_egraph_nodes(nodes, cur, eclasses, nodeclass, seen, subexprs, maxexprs):
+def _traverse_egraph_nodes(nodes, cur, eclasses, nodeclass, seen, subexprs, maxim):
     if cur in seen: return
-    if maxexprs != -1 and len(subexprs) >= maxexprs: return
+    if maxim != -1 and len(subexprs) >= maxim: return
     # don't travel the same path twice
     seen = seen | set([cur])
     # for every node in this equivalence class
     for node in eclasses[cur]:
         # all products of child equivalent classes
-        for args in itertools.product(*[_traverse_egraph_nodes(nodes, nodeclass[child], eclasses, nodeclass, seen, subexprs, maxexprs) for child in nodes[node]["children"]]):
+        for args in itertools.product(*[_traverse_egraph_nodes(nodes, nodeclass[child], eclasses, nodeclass, seen, subexprs, maxim) for child in nodes[node]["children"]]):
+            if maxim != -1 and len(subexprs) >= maxim: return
             r = (nodes[node]["op"], args)
             # add subexprs to output set
             subexprs.add(r)
@@ -135,10 +136,13 @@ def _json_to_expr(subexpr):
     else:
         raise Exception("Invalid function", f)
         
+
+egg_json_to_expr = _json_to_expr
+
 # extremely inefficient as we get the egraph as json
 # then need to get the subexpressions
 # then need to convert back to python
-def egg_extract_all_subexpr(egg, rootExpr, maxexprs=-1):
+def egg_extract_all_subexpr(egg, rootExpr, maxim=-1):
     _root = egg._state.typed_expr_to_egg(expr_parts(rootExpr))
 
     json_egraph = egg._egraph.serialize([_root],
@@ -162,13 +166,13 @@ def egg_extract_all_subexpr(egg, rootExpr, maxexprs=-1):
     
     subexprs = set()
     # fill the subexprs set
-    for r in _traverse_egraph_nodes(json_egraph["nodes"], root, eclasses,nodeclass, set(), subexprs, maxexprs):
+    for r in _traverse_egraph_nodes(json_egraph["nodes"], root, eclasses,nodeclass, set(), subexprs, maxim):
         pass
 
     for r in subexprs:
         # skip raw numbers and var names
         if not r[0].startswith("BitVec"): continue
-        yield _json_to_expr(r)
+        yield r #_json_to_expr(r)
         
     
 def BitVec_rules() -> list[RewriteOrRule]:

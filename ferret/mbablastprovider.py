@@ -166,8 +166,8 @@ class MBABlastEqualityProvider(EqualityProvider):
     
 
     def _truthtable_to_coefficients(self, truthtable, var_amount):
-        A = np.mat(self.truthbasisMap[var_amount]).T
-        b = np.mat(truthtable).T
+        A = np.asmatrix(self.truthbasisMap[var_amount]).T
+        b = np.asmatrix(truthtable).T
         r = np.linalg.solve(A, b)
         l = [int(i) for i in np.array(r).reshape(-1,).tolist()]
         # would be smart to cache l for truthtable key
