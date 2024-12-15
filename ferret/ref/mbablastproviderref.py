@@ -55,7 +55,6 @@ class MBABlastEqualityProviderReference(EqualityProvider):
         #.. mba-blasts parser is too fragile to parse redudant brackets..
         str_expr = str_expr.replace(" ", "")
         
-
         (simExpre, vnumber, replaceStr) = mba_blast.simplify_MBA(str_expr)
         simExpre = mba_blast.refine_mba(simExpre, vnumber)
 

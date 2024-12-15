@@ -1,6 +1,6 @@
 import os
 import csv
-from ferret import BitVec
+from ferret import VarNode, str_to_ast
 
 
 # pldi_dataset_linear_MBA.txt, pldi_dataset_nonpoly_MBA.txt, pldi_dataset_poly_MBA.txt
@@ -21,20 +21,17 @@ def parseDataset(maximum=-1):
         PROJECT_PATH,"thirdparty", "MBA-Solver", "full-dataset"
     )
 
-    a = BitVec.var("a")
-    b = BitVec.var("b")
-    x = BitVec.var("x")
-    y = BitVec.var("y")
-    z = BitVec.var("z")
-    t = BitVec.var("t")
+    var_dict = {}
+    for v in ["a","b","x","y","z","t"]:
+        var_dict[v] = VarNode(v)
 
     with open(os.path.join(DATASET_PATH, "pldi_dataset_linear_MBA.txt"), newline='') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=',')
         i = 0
         for row in spamreader:
             if row[0].startswith("#"): continue
-            pldi_dataset_linear_MBA.append(eval(row[0]))
-            pldi_dataset_linear_MBA_groundtruth.append(eval(row[1]))
+            pldi_dataset_linear_MBA.append(str_to_ast(row[0], var_dict))
+            pldi_dataset_linear_MBA_groundtruth.append(str_to_ast(row[1], var_dict))
             i += 1
             if maximum != -1 and i >= maximum: break
 
@@ -43,8 +40,8 @@ def parseDataset(maximum=-1):
         i = 0
         for row in spamreader:
             if row[0].startswith("#"): continue
-            pldi_dataset_nonpoly_MBA.append(eval(row[0]))
-            pldi_dataset_nonpoly_MBA_groundtruth.append(eval(row[1]))
+            pldi_dataset_nonpoly_MBA.append(str_to_ast(row[0], var_dict))
+            pldi_dataset_nonpoly_MBA_groundtruth.append(str_to_ast(row[1], var_dict))
             i += 1
             if maximum != -1 and i >= maximum: break
 
@@ -53,8 +50,8 @@ def parseDataset(maximum=-1):
         i = 0
         for row in spamreader:
             if row[0].startswith("#"): continue
-            pldi_dataset_poly_MBA.append(eval(row[0]))
-            pldi_dataset_poly_MBA_groundtruth.append(eval(row[1]))
+            pldi_dataset_poly_MBA.append(str_to_ast(row[0], var_dict))
+            pldi_dataset_poly_MBA_groundtruth.append(str_to_ast(row[1], var_dict))
             i += 1
             if maximum != -1 and i >= maximum: break
 
@@ -68,12 +65,10 @@ def getDataset(maximum=-1, skip=0):
         PROJECT_PATH,"thirdparty", "MBA-Solver", "full-dataset"
     )
 
-    a = BitVec.var("a")
-    b = BitVec.var("b")
-    x = BitVec.var("x")
-    y = BitVec.var("y")
-    z = BitVec.var("z")
-    t = BitVec.var("t")
+    var_dict = {}
+    for v in ["a","b","x","y","z","t"]:
+        var_dict[v] = VarNode(v)
+
 
     datasetNames = ["pldi_dataset_linear_MBA", "pldi_dataset_nonpoly_MBA", "pldi_dataset_poly_MBA"]
     for datasetName in datasetNames:
@@ -82,6 +77,6 @@ def getDataset(maximum=-1, skip=0):
             i = 0
             for row in spamreader:
                 if row[0].startswith("#"): continue
-                if i >= skip: yield (datasetName, eval(row[0]), eval(row[1]))
+                if i >= skip: yield (datasetName,  str_to_ast(row[0], var_dict), str_to_ast(row[1], var_dict))
                 i += 1
                 if maximum != -1 and i >= maximum: break

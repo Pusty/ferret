@@ -11,8 +11,6 @@ print("QSynth Tests:")
 
 dataset_name, dataset, dataset_groundtruth = parseDataset(100)[0]
 
-#dataset = [((BitVec.var("x") & BitVec.var("y")) - (BitVec.var("y") + BitVec.var("x"))) * 11 ]
-
 
 def eval_provider(prov):
     start_value_accum = 0
@@ -25,7 +23,7 @@ def eval_provider(prov):
         expr = dataset[i]
         gexpr = dataset_groundtruth[i]
 
-        success, sexprs = prov.simplifyExpr(expr)
+        success, sexprs = prov.simplify(expr)
 
         if not success:
             print("Failed to simplify ", expr)
@@ -38,14 +36,14 @@ def eval_provider(prov):
             print("[!]", expr, "!=", sexpr)
             continue
                 
-        egraph = EGraph()
+        egraph = ferret.create_graph()
         egraph.register(expr)
         egraph.register(sexpr)
         egraph.register(gexpr)
-        _, cost_groundtruth = egraph.extract(gexpr, include_cost=True)
-        in_expr, cost_before = egraph.extract(expr, include_cost=True)
-        egraph.register(union(expr).with_(sexpr))
-        out_expr, cost_after = egraph.extract(expr, include_cost=True)
+        cost_groundtruth = egraph.cost(gexpr)
+        cost_before = egraph.cost(expr)
+        egraph.union(expr,sexpr)
+        cost_after = egraph.cost(expr)
 
         #print(expr_to_str(out_expr), "=>", expr_to_str(gexpr))
 

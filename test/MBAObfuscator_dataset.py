@@ -1,6 +1,6 @@
 import os
 import csv
-from ferret import BitVec
+from ferret import VarNode, str_to_ast
 
 
 # ground.linear.nonpoly.txt, ground.linear.poly.txt
@@ -19,18 +19,17 @@ def parseDataset(maximum=-1):
         PROJECT_PATH,"thirdparty", "MBA-Obfuscator", "samples"
     )
 
-    x = BitVec.var("x")
-    y = BitVec.var("y")
-    z = BitVec.var("z")
-    t = BitVec.var("t")
+    var_dict = {}
+    for v in ["x","y","z","t"]:
+        var_dict[v] = VarNode(v)
 
     with open(os.path.join(DATASET_PATH, "ground.linear.nonpoly.txt"), newline='') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=',')
         i = 0
         for row in spamreader:
             if row[0].startswith("#"): continue
-            ground_linear_nonpoly.append(eval(row[2]))
-            ground_linear_nonpoly_groundtruth.append(eval(row[1]))
+            ground_linear_nonpoly.append(str_to_ast(row[2], var_dict))
+            ground_linear_nonpoly_groundtruth.append(str_to_ast(row[1], var_dict))
             i += 1
             if maximum != -1 and i >= maximum: break
 
@@ -39,8 +38,8 @@ def parseDataset(maximum=-1):
         i = 0
         for row in spamreader:
             if row[0].startswith("#"): continue
-            ground_linear_poly.append(eval(row[2]))
-            ground_linear_poly_groundtruth.append(eval(row[1]))
+            ground_linear_poly.append(str_to_ast(row[2], var_dict))
+            ground_linear_poly_groundtruth.append(str_to_ast(row[1], var_dict))
             i += 1
             if maximum != -1 and i >= maximum: break
 
@@ -53,11 +52,10 @@ def getDataset(maximum=-1, skip=0):
         PROJECT_PATH,"thirdparty", "MBA-Obfuscator", "samples"
     )
 
-    x = BitVec.var("x")
-    y = BitVec.var("y")
-    z = BitVec.var("z")
-    t = BitVec.var("t")
-
+    var_dict = {}
+    for v in ["x","y","z","t"]:
+        var_dict[v] = VarNode(v)
+        
     datasetNames = ["ground_linear_nonpoly", "ground_linear_poly"]
     for datasetName in datasetNames:
         with open(os.path.join(DATASET_PATH, datasetName+".txt"), newline='') as csvfile:
@@ -65,6 +63,6 @@ def getDataset(maximum=-1, skip=0):
             i = 0
             for row in spamreader:
                 if row[0].startswith("#"): continue
-                if i >= skip: yield (datasetName, eval(row[2]), eval(row[1]))
+                if i >= skip: yield (datasetName, str_to_ast(row[2], var_dict), str_to_ast(row[1], var_dict))
                 i += 1
                 if maximum != -1 and i >= maximum: break

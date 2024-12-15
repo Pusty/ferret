@@ -1,6 +1,7 @@
 import os
 import csv
-from ferret import BitVec
+from ferret import VarNode, str_to_ast
+
 
 
 # dataset2_64bit.txt
@@ -16,24 +17,17 @@ def parseDataset(maximum=-1):
         PROJECT_PATH,"thirdparty", "MBA-Blast", "dataset"
     )
 
-    a = BitVec.var("a")
-    b = BitVec.var("b")
-    c = BitVec.var("c")
-    d = BitVec.var("d")
-    e = BitVec.var("e")
-    f = BitVec.var("f")
-    x = BitVec.var("x")
-    y = BitVec.var("y")
-    z = BitVec.var("z")
-    t = BitVec.var("t")
+    var_dict = {}
+    for v in ["a","b","c", "d", "e", "f", "x","y","z","t"]:
+        var_dict[v] = VarNode(v)
 
     with open(os.path.join(DATASET_PATH, "dataset2_64bit.txt"), newline='') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=',')
         i = 0
         for row in spamreader:
             if row[0].startswith("#"): continue
-            dataset2_64bit.append(eval(row[0]))
-            dataset2_64bit_groundtruth.append(eval(row[1]))
+            dataset2_64bit.append(str_to_ast(row[0], var_dict))
+            dataset2_64bit_groundtruth.append(str_to_ast(row[1], var_dict))
             i += 1
             if maximum != -1 and i >= maximum: break
 
@@ -47,16 +41,10 @@ def getDataset(maximum=-1, skip=0):
         PROJECT_PATH,"thirdparty", "MBA-Blast", "dataset"
     )
 
-    a = BitVec.var("a")
-    b = BitVec.var("b")
-    c = BitVec.var("c")
-    d = BitVec.var("d")
-    e = BitVec.var("e")
-    f = BitVec.var("f")
-    x = BitVec.var("x")
-    y = BitVec.var("y")
-    z = BitVec.var("z")
-    t = BitVec.var("t")
+    var_dict = {}
+    for v in ["a","b","c", "d", "e", "f", "x","y","z","t"]:
+        var_dict[v] = VarNode(v)
+
     datasetNames = ["dataset2_64bit"]
     for datasetName in datasetNames:
         with open(os.path.join(DATASET_PATH, datasetName+".txt"), newline='') as csvfile:
@@ -64,6 +52,6 @@ def getDataset(maximum=-1, skip=0):
             i = 0
             for row in spamreader:
                 if row[0].startswith("#"): continue
-                if i >= skip: yield (datasetName, eval(row[0]), eval(row[1]))
+                if i >= skip: yield (datasetName, str_to_ast(row[0], var_dict), str_to_ast(row[1], var_dict))
                 i += 1
                 if maximum != -1 and i >= maximum: break

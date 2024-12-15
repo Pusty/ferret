@@ -2,10 +2,10 @@ from ferret import *
 
 print("LLVMLite Tests:")
 
-w = BitVec.var("w")
-x = BitVec.var("x")
-y = BitVec.var("y")
-z = BitVec.var("z")
+w = VarNode("w")
+x = VarNode("x")
+y = VarNode("y")
+z = VarNode("z")
 
 
 
@@ -13,8 +13,8 @@ testExpressionSet = [
     -1 * (x) -2 * y ,
     ~(x+y+(~(x+y+x+y))+-z),
     (x&~y)+(-(~y))+(~x)+(-y),
-    -(~y)+(x|~y)+(x|~y)+(x|y)+BitVec(1)+(-(x&y)-(x&y)),
-    (~y)+(-(~x))+(~x|y)+(~x|y)+(-(x&y))+BitVec(1),
+    -(~y)+(x|~y)+(x|~y)+(x|y)+I64Node(1)+(-(x&y)-(x&y)),
+    (~y)+(-(~x))+(~x|y)+(~x|y)+(-(x&y))+I64Node(1),
     (((((((-(x&y)-(x&y)-(x&y)-(x&y))-(x^y))+(~(x|y))+(~(x|y))+(~(x|y))+(~(x|y))+(~(x|y)))-(~(x^y)))-(~y))-(x|~y))-(~x)),
     (-(~((-((-(x*y))+1+1))+1))),
     -(x&y)+(x|y)+(~(x^y))-(~y),
@@ -48,7 +48,7 @@ delta_accum = 0
 
 for oexpr in testExpressionSet:
     expr = oexpr
-    success, sexprs = llp.simplifyExpr(expr)
+    success, sexprs = llp.simplify(expr)
 
     if not success:
         print("Failed to simplify ", expr)
@@ -58,14 +58,14 @@ for oexpr in testExpressionSet:
 
     #ferret.assert_oracle_equality(sexpr, expr)
 
-    egraph = EGraph(save_egglog_string=True)
-    egraph.register(expr)
-    egraph.register(sexpr)
+    egg = ferret.create_graph()
+    egg.register(expr)
+    egg.register(sexpr)
 
-    in_expr, cost_before = egraph.extract(expr, include_cost=True)
-    egraph.register(union(expr).with_(sexpr))
-    out_expr, cost_after = egraph.extract(expr, include_cost=True)
-    #egraph.display()
+    cost_before = egg.cost(expr)
+    egg.union(expr, sexpr)
+    out_expr, cost_after = egg.extract(expr, include_cost=True)
+    #egg.display()
     #print(out_expr)
     ferret.assert_oracle_equality(out_expr, oexpr)
     start_value_accum += cost_before

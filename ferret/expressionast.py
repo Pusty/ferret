@@ -1,6 +1,3 @@
-from egglog import *
-from egglog.declarations import *
-from egglog.runtime import *
 from enum import Enum, EnumMeta
 
 import ast as ast_module
@@ -43,39 +40,42 @@ class Node():
         return self.__str__()    
     def __eq__(self, other):
         return NotImplementedError()
+    def __hash__(self):
+        return NotImplementedError()
+    
     
     def __add__(self, other):
         return CallNode(CallType.ADD, [builtin_to_ast(self), builtin_to_ast(other)])
     def __radd__(self, other):
-        return self.__add__(other)
+        return CallNode(CallType.ADD, [builtin_to_ast(other), builtin_to_ast(self)])
     def __sub__(self, other):
         return CallNode(CallType.SUB, [builtin_to_ast(self), builtin_to_ast(other)])
     def __rsub__(self, other):
-        return self.__sub__(other)
+        return CallNode(CallType.SUB, [builtin_to_ast(other), builtin_to_ast(self)])
     def __mul__(self, other):
         return CallNode(CallType.MUL, [builtin_to_ast(self), builtin_to_ast(other)])
     def __rmul__(self, other):
-        return self.__mul__(other)
+        return CallNode(CallType.MUL, [builtin_to_ast(other), builtin_to_ast(self)])
     def __and__(self, other):
         return CallNode(CallType.AND, [builtin_to_ast(self), builtin_to_ast(other)])
     def __rand__(self, other):
-        return self.__and__(other)
+        return CallNode(CallType.AND, [builtin_to_ast(other), builtin_to_ast(self)])
     def __or__(self, other):
         return CallNode(CallType.OR, [builtin_to_ast(self), builtin_to_ast(other)])
     def __ror__(self, other):
-        return self.__or__(other)
+        return CallNode(CallType.OR, [builtin_to_ast(other), builtin_to_ast(self)])
     def __xor__(self, other):
         return CallNode(CallType.XOR, [builtin_to_ast(self), builtin_to_ast(other)])
     def __rxor__(self, other):
-        return self.__xor__(other)
+        return CallNode(CallType.XOR, [builtin_to_ast(other), builtin_to_ast(self)])
     def __lshift__(self, other):
         return CallNode(CallType.SHL, [builtin_to_ast(self), builtin_to_ast(other)])
     def __rlshift__(self, other):
-        return self.__lshift__(other)
+        return CallNode(CallType.SHL, [builtin_to_ast(other), builtin_to_ast(self)])
     def __rshift__(self, other):
         return CallNode(CallType.SHR, [builtin_to_ast(self), builtin_to_ast(other)])
     def __rrshift__(self, other):
-        return self.__rshift__(other)
+        return CallNode(CallType.SHR, [builtin_to_ast(other), builtin_to_ast(self)])
     def __invert__(self):
         return CallNode(CallType.NOT, [builtin_to_ast(self)])
     def __neg__(self):
@@ -93,9 +93,17 @@ class VarNode(Node):
         if isinstance(other, VarNode):
             return self.type == other.type and self.value == other.value
         return False
+    def __hash__(self):
+        return hash((self.type, self.value))
+    
 class I64Node(Node):
     def __init__(self, value: int):
         self.type = NodeType.I64
+        value = value & 0xffffffffffffffff
+        if value > 0x7fffffffffffffff:
+            value = value-0x10000000000000000
+        if value < -0x7fffffffffffffff:
+            value = value+0x10000000000000000
         self.value = value
     def __getitem__(self, key):
         return [self.type, self.value][key]
@@ -105,6 +113,11 @@ class I64Node(Node):
         if isinstance(other, I64Node):
             return self.type == other.type and self.value == other.value
         return False
+    def __hash__(self):
+        return hash((self.type, self.value))
+
+from functools import cached_property
+
 class CallNode(Node):
     def __init__(self, callType: CallType, nodes: list[Node]):
         self.type = NodeType.CALL
@@ -114,11 +127,18 @@ class CallNode(Node):
         return [self.type, self.value, self.children][key]
     def __str__(self):
         return ast_module.unparse(ast_module.parse(ast_to_str(self))) 
-    
     def __eq__(self, other):
         if isinstance(other, CallNode):
             return self.type == other.type and self.value == other.value and self.children == other.children
         return False
+    
+
+    def __hash__(self):
+        return self._cached_hash
+
+    @cached_property
+    def _cached_hash(self) -> int:
+        return  hash((self.type, self.value, hash(tuple(self.children))))
 
 def map_ast(ast, f_var, f_i64, f_call):
     if isinstance(ast, VarNode):
@@ -157,34 +177,6 @@ def map_ast_bfs(ast, f):
     else:
         raise Exception("Unknown AST node "+str(ast))
 
-
-def expr_to_ast(expr):
-    if(isinstance(expr, RuntimeExpr)):
-        return expr_to_ast(expr_parts(expr))
-    elif(isinstance(expr, TypedExprDecl)):
-        return expr_to_ast(expr.expr)
-    elif(isinstance(expr, CallDecl)):
-        if isinstance(expr.callable, ClassMethodRef):
-            if expr.callable.method_name == "var":
-                return VarNode(expr.args[0].expr.value)
-            elif expr.callable.method_name == "__init__":
-                return I64Node(expr.args[0].expr.value)
-        elif isinstance(expr.callable, InitRef):
-            return I64Node(expr.args[0].expr.value)
-        elif isinstance(expr.callable, MethodRef):
-            pargs = []
-            for arg in expr.args:
-                pargs.append(expr_to_ast(arg))
-            if not expr.callable.method_name in CallType:
-                raise Exception("Unsupported AST Call "+str(expr.callable.method_name))
-            return CallNode(expr.callable.method_name, pargs)
-        else:
-            raise Exception("Unknown AST Decl "+str(expr))
-     # this is unrelated to egglog internals and just a possible edge case of eval based program I'm doing
-    elif(isinstance(expr, int)):
-        return I64Node(expr)
-    else:
-        raise Exception("Unknown AST Expression "+str(expr))
 
 def eval_ast(ast, varMap):
     I64_MASK = 0xffffffffffffffff

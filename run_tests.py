@@ -1,6 +1,4 @@
 import ferret
-import test
-import egglog
 
 from multiprocessing import Pool
 import tqdm
@@ -11,14 +9,13 @@ import test.MBABlast_dataset as mbaobf_dataset
 def test_eqprovs_sample(sample, equalityprovders):
     dataset_name, expr, gexpr = sample
 
+    ground_graph = ferret.create_graph()
+
     # Ground Truth Cost
-    egraph = egglog.EGraph()
-    egraph.register(gexpr)
-    _, cost_groundtruth = egraph.extract(gexpr, include_cost=True)
+    cost_groundtruth = ground_graph.cost(gexpr)
 
     # Cost of Initial Expression
-    egraph.register(expr)
-    _, cost_before = egraph.extract(expr, include_cost=True)
+    cost_before = ground_graph.cost(expr)
 
     # Apply (max) 8 runs of rules and equality providers then get cost out
     egg = ferret.create_graph()
@@ -72,7 +69,7 @@ def test_eqprovs_sample_wrapper(tupleThingy):
 
 def benchmark_eqprovs(dataset_generator, equalityprovders, totalsamples=-1):
     print("EqProvs: ", ','.join([eqprov.name() for eqprov in equalityprovders]))
-    with Pool(16) as p:
+    with Pool(10) as p:
         results = list(tqdm.tqdm(p.imap(test_eqprovs_sample_wrapper, ([d, equalityprovders] for d in dataset_generator)), total=totalsamples))
 
         sample_size = len(results)
@@ -97,7 +94,7 @@ def run_all_tests():
 
     simbaref = ferret.SiMBAEqualityProviderReference()
 
-    amount = 10
+    amount = 100
     dataset = lambda: mbaobf_dataset.getDataset(amount, skip=0)
 
 
@@ -130,7 +127,8 @@ def run_all_tests():
     #test_eqprovs(dataset(), [])
     #test_eqprovs(dataset(), [llp])
     #test_eqprovs(dataset(), [mbabp])
-    #test_eqprovs(dataset(), [llp, mbabp])
+    #test_eqprovs(dataset(), [qsynth])
+    #test_eqprovs(dataset(), [simbaref])
 
     #test_eqprovs(dataset(), [qsynth])
     #test_eqprovs(dataset(), [llp, qsynth])
