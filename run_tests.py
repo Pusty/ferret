@@ -104,7 +104,7 @@ def run_all_tests():
     benchmark_eqprovs(dataset(), [llp], amount)
     benchmark_eqprovs(dataset(), [mbabp], amount)
     benchmark_eqprovs(dataset(), [qsynth], amount)
-    benchmark_eqprovs(dataset(), [simbaref], amount)
+    #benchmark_eqprovs(dataset(), [simbaref], amount)
 
     """
     benchmark_eqprovs(dataset(), [llp, mbabp], amount)
@@ -155,6 +155,7 @@ def run_simba_test():
 #run_simba_test()
 
 #run_all_tests()
+
 
 
 import cProfile as profile

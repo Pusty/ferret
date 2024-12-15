@@ -226,7 +226,8 @@ class EggBasic(EggModel):
             # all products of child equivalent classes
             for args in itertools.product(*[self._traverse_egraph_nodes(nodes, nodeclass[child], eclasses, nodeclass, seen, subexprs, maxim) for child in nodes[node]["children"]]):
                 if maxim != -1 and len(subexprs) >= maxim: return
-                r = self.json_to_ast((nodes[node]["op"], args))
+                r = (nodes[node]["op"], args)
+                #r = self.json_to_ast(r)
                 # add subexprs to output set
                 subexprs.add(r)
                 # yield for one layer up in recursion
@@ -234,9 +235,9 @@ class EggBasic(EggModel):
 
     def json_to_ast(self, subexpr: Tuple[str, List] | Node) -> Node:
         if isinstance(subexpr, Node): return subexpr
-        if isinstance(subexpr, int): return subexpr
-        if isinstance(subexpr, str): return subexpr
-        #print(subexpr)
+        elif isinstance(subexpr, int): return subexpr
+        elif isinstance(subexpr, str): return subexpr
+
         f, arg = subexpr
         if not f[0] == 'B': # doesn't start with BitVec
             if f[0] == '"' or f[0] == "'": # var
@@ -299,7 +300,8 @@ class EggBasic(EggModel):
 
             for r in subexprs:
                 # skip raw numbers and var names
-                if not isinstance(r, Node): continue
+                if r[0][0] != "B": continue
+                #if not isinstance(r, Node): continue
                 yield r
                 
 

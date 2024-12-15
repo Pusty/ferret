@@ -78,7 +78,7 @@ def all_simplify(egg: EggModel, ast: Node, eqprovs: list[EqualityProvider]=[], i
 
             for option in options:
                 for eqprov in eqprovs:
-                    apply_eqprov(egg, eqprov, option)
+                    apply_eqprov(egg, eqprov, egg.json_to_ast(option))
 
             processed += len(options)
             #print("Procecced ",len(options),"new subexpressions out of ", len(already), "( last node count: ",last_amount_nodes,")")
