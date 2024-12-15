@@ -40,5 +40,6 @@ class EggModel():
         raise NotImplementedError("Not implemented")
 
 from .bitvec_basic import EggBasic
+from .bitvec_multiset import EggMultiset
 
-EggImpl = EggBasic
+EggImpl = EggMultiset

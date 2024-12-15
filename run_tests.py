@@ -21,8 +21,13 @@ def test_eqprovs_sample(sample, equalityprovders):
     egg = ferret.create_graph()
 
 
+    # These settings are for bitvec_basic
     #ferret.iter_simplify(egg, expr, equalityprovders, 4)
-    ferret.all_simplify(egg, expr, equalityprovders, 3)
+    #ferret.all_simplify(egg, expr, equalityprovders, 3)
+
+    # These settings are for bitvec_multiset
+    #ferret.iter_simplify(egg, expr, equalityprovders, 20, 50000)
+    ferret.all_simplify(egg, expr, equalityprovders, 5, 10000, 10000)
 
 
     expr_out, cost_after = egg.extract(expr, include_cost=True)
@@ -155,7 +160,6 @@ def run_simba_test():
 #run_simba_test()
 
 #run_all_tests()
-
 
 
 import cProfile as profile

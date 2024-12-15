@@ -71,7 +71,7 @@ def all_simplify(egg: EggModel, ast: Node, eqprovs: list[EqualityProvider]=[], i
             # TODO: If this stays, seed this to make it deterministic
             # Ideally we wouldn't want to limit this at all, but
             # the amount of connection explodes fast
-            if max_subexpr != -1:
+            if max_subexpr != -1 and len(options) >= max_subexpr:
                 import random
                 random.shuffle(options)
                 options = options[:max_subexpr]
