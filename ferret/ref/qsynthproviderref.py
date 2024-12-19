@@ -28,7 +28,7 @@ class QSynthEqualityProviderReference(EqualityProvider):
 
 
     def failed(self, expr):
-        print("Failed to apply QSynth Reference to "+expr)
+        print("Failed to apply QSynth Reference to", expr)
         pass
 
     def name(self) -> str:

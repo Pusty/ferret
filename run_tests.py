@@ -9,28 +9,30 @@ import test.MBABlast_dataset as mbaobf_dataset
 def test_eqprovs_sample(sample, equalityprovders):
     dataset_name, expr, gexpr = sample
 
-    ground_graph = ferret.create_graph()
-
     # Ground Truth Cost
-    cost_groundtruth = ground_graph.cost(gexpr)
+    cost_groundtruth = ferret.ast_cost(gexpr)
 
     # Cost of Initial Expression
-    cost_before = ground_graph.cost(expr)
+    cost_before = ferret.ast_cost(expr)
 
     # Apply (max) 8 runs of rules and equality providers then get cost out
-    egg = ferret.create_graph()
+    egg = ferret.create_graph("basic")
 
 
     # These settings are for bitvec_basic
     #ferret.iter_simplify(egg, expr, equalityprovders, 4)
     #ferret.all_simplify(egg, expr, equalityprovders, 3)
 
+    egg.run = lambda x: None
+    ferret.all_simplify(egg, expr, equalityprovders, 3, 10000, 500)
+
     # These settings are for bitvec_multiset
     #ferret.iter_simplify(egg, expr, equalityprovders, 20, 50000)
-    ferret.all_simplify(egg, expr, equalityprovders, 5, 10000, 10000)
+    #ferret.all_simplify(egg, expr, equalityprovders, 3, 10000, 10000)
 
+    expr_out = egg.extract(expr)
 
-    expr_out, cost_after = egg.extract(expr, include_cost=True)
+    cost_after = ferret.ast_cost(expr_out)
 
     # Verify expressions through testing random values
     ferret.assert_oracle_equality(gexpr, expr_out)
@@ -45,28 +47,28 @@ def test_eqprovs(dataset_generator, equalityprovders):
         dataset_name, expr, gexpr = sample
         if cur_dataset != dataset_name:
             if cur_dataset != None:
-                print("\t", "Ground Cost", groundtruth_accum)
-                print("\t", "Start Cost", start_value_accum)
-                print("\t", "End Cost", end_value_accum)
-                print("\t", "Simplification to", (end_value_accum/start_value_accum)*100, "%")
-                print("\t", "Groundtruth would be ", (groundtruth_accum/start_value_accum)*100, "%")
+                print("\t", "Average Ground Cost", (groundtruth_accum/sample_size))
+                print("\t", "Average Before Cost", (start_value_accum/sample_size))
+                print("\t", "Average After  Cost", (end_value_accum/sample_size))
+                print("\t", "A/B (%)", (ab_accum/sample_size)*100, "%")
             print("\t", "Dataset: ", dataset_name)
             groundtruth_accum = 0
             start_value_accum = 0
             end_value_accum = 0
+            ab_accum = 0
             cur_dataset = dataset_name
-            i = 0
+            sample_size = 0
         cost_groundtruth, cost_before, cost_after = test_eqprovs_sample(sample, equalityprovders)
         groundtruth_accum += cost_groundtruth
         start_value_accum += cost_before
-        end_value_accum += cost_after
-        i += 1
+        end_value_accum   += cost_after
+        ab_accum          += (cost_after / start_value_accum)
+        sample_size += 1
 
-    print("\t", "Ground Cost", groundtruth_accum)
-    print("\t", "Start Cost", start_value_accum)
-    print("\t", "End Cost", end_value_accum)
-    print("\t", "Simplification to", (end_value_accum/start_value_accum)*100, "%")
-    print("\t", "Groundtruth would be ", (groundtruth_accum/start_value_accum)*100, "%")
+        print("\t", "Average Ground Cost", (groundtruth_accum/sample_size))
+        print("\t", "Average Before Cost", (start_value_accum/sample_size))
+        print("\t", "Average After  Cost", (end_value_accum/sample_size))
+        print("\t", "A/B (%)", (ab_accum/sample_size)*100, "%")
 
 
 def test_eqprovs_sample_wrapper(tupleThingy):
@@ -109,7 +111,7 @@ def run_all_tests():
     benchmark_eqprovs(dataset(), [llp], amount)
     benchmark_eqprovs(dataset(), [mbabp], amount)
     benchmark_eqprovs(dataset(), [qsynth], amount)
-    #benchmark_eqprovs(dataset(), [simbaref], amount)
+    benchmark_eqprovs(dataset(), [simbaref], amount)
 
     """
     benchmark_eqprovs(dataset(), [llp, mbabp], amount)

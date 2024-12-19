@@ -278,7 +278,7 @@ class MBABlastEqualityProvider(EqualityProvider):
         return (True, [oexpr])
 
     def failed(self, ast: Node):
-        #print("Failed to apply MBA-Blast to "+ast)
+        #print("Failed to apply MBA-Blast to", ast)
         pass
 
     def name(self) -> str:

@@ -1,12 +1,15 @@
 from .equalityprovider import *
 import random
 
-from .eggmodel.eggmodel import EggImpl, EggModel
+from .eggmodel.eggmodel import EggImpl, EggModel, get_eggmodel_impl
 
 # Project Root
 
-def create_graph() -> EggModel:
-    egg = EggImpl()
+def create_graph(model=None) -> EggModel:
+    if model == None: # probably depreciate this
+        egg = EggImpl()
+    else:
+        egg = get_eggmodel_impl(model)()
     return egg
 
 def apply_eqprov(egg: EggModel, eqprov: EqualityProvider, ast: Node):
@@ -37,7 +40,13 @@ def iter_simplify(egg: EggModel, ast: Node, eqprovs: list[EqualityProvider]=[], 
  
         last_cost = egg.cost(ast)
 
+        #print("====================")
+        #print(egg.egraph.commands())
+        #print("====================")
+
         amount_nodes = egg.nodecount()
+        #print(amount_nodes)
+        
         # probably explodes
         if amount_nodes > max_nodes: break
         # saturated

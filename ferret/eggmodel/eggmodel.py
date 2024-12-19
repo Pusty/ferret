@@ -42,4 +42,12 @@ class EggModel():
 from .bitvec_basic import EggBasic
 from .bitvec_multiset import EggMultiset
 
-EggImpl = EggMultiset
+EggImpl = EggBasic
+
+def get_eggmodel_impl(name):
+    if name == "basic":
+        return EggBasic
+    elif name == "multiset":
+        return EggMultiset
+    else:
+        raise Exception("Unknown Egg Model "+name)

@@ -80,7 +80,7 @@ class QSynthEqualityProvider(EqualityProvider):
             return self.table.get(self._hash(outs))
 
     def failed(self, ast: Node):
-        print("Failed to apply QSynth to "+ast)
+        print("Failed to apply QSynth to", ast)
         pass
 
     def name(self) -> str:

@@ -11,7 +11,7 @@ from typing import Tuple, List
 class EggMultiset(EggModel):
 
     def __init__(self):
-        self.egraph = EGraph()
+        self.egraph = EGraph(record=True)
         self.display_step = []
         self.let_cache = {}
         self.let_index = 0
@@ -94,7 +94,7 @@ class EggMultiset(EggModel):
                 )
                 (
                     (union setv (BitVecSet{operator} merge))
-                    ;(delete (BitVecSet{operator} set-inner-inner))
+                    ;(delete (BitVecSet{operator} set-inner))
                 )
             )
             """)
@@ -384,9 +384,10 @@ class EggMultiset(EggModel):
         else:
             pastB = self._ast_to_egg(astB)
 
+        if pastA == pastB: return
+
         #self.egraph.run_program(*parse_program("(union "+self._ast_to_egg_str(astA)+" "+self._ast_to_egg_str(astB)+")"))
         self.egraph.run_program(ActionCommand(Union(DUMMY_SPAN, pastA, pastB)))
-
     
     
     def nodecount(self) -> int:
