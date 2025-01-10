@@ -66,7 +66,7 @@ class LLVMLiteEqualityProvider(EqualityProvider):
         
         return llmod
 
-    def parse_ir(self, module, var_names):
+    def parse_ir(self, module, var_names, debug):
         try:
             sm = str(module).split("\n")
             mmap = {}
@@ -87,6 +87,10 @@ class LLVMLiteEqualityProvider(EqualityProvider):
                         findRetVar = re.findall(r'ret i64 (-?\d+)', line)
                         if len(findRetVar) == 1:
                             return (True, [I64Node(int(findRetVar[0]))])
+                        # some undefined behavior (e.g. shift by ~0)
+                        findRetVar = re.findall(r'ret i64 poison', line)
+                        if len(findRetVar) == 1:
+                            return (False, [])
                         raise LLVMLiteParseException("Malformed ret: "+line) 
                     else:
                         # ignore no signed unwrap flag
@@ -147,6 +151,7 @@ class LLVMLiteEqualityProvider(EqualityProvider):
             raise LLVMLiteParseException("Malformed module in llvmliteprovider")
         except Exception as e:
             print(e)
+            print(debug)
             print(module)
             return (False, [])
 
@@ -157,14 +162,9 @@ class LLVMLiteEqualityProvider(EqualityProvider):
         #print("IN:", expr_to_str(expr))
 
         module, var_names = self.ast_to_ir(ast)
-
-        #print(module)
-
         module = self.opt_ir(module)
         #module = llvm.parse_assembly(str(module))
-
-        #print(module)
-        succ, opti = self.parse_ir(module, var_names)
+        succ, opti = self.parse_ir(module, var_names, (ast))
 
         #if succ:
         #    print("OUT:", expr_to_str(opti[0]))
@@ -185,3 +185,6 @@ class LLVMLiteEqualityProvider(EqualityProvider):
     
     def name(self) -> str:
         return "LLVMLiteEqualityProvider"
+    
+    def failed(self, ast: Node):
+        pass

@@ -32,14 +32,31 @@ class EggMultiset(EggModel):
             (BitVecSet__xor__ BitVecMultiSet)
             (BitVecSet__or__ BitVecMultiSet)
         )
+        (sort BitVecToBitVec (UnstableFn (BitVec) BitVec))
         (sort BitVecMultiSet (MultiSet BitVec))
         )
+        """
 
-        ; a-b = a + (-b)
-        (rewrite (BitVec___sub__ a b) (BitVecSet__add__ (multiset-of a (BitVec___neg__ b))))
+        # add rules
+        commands = parse_program(egg_rewrites)
+        self.egraph.run_program(*commands)
 
+
+        commands = parse_program("""
+        ; ~(-x) = x-1
+        (rewrite (BitVec___invert__ (BitVec___neg__ x)) (BitVecSet__add__ (multiset-of x (BitVec___neg__ (BitVec___init__ 1)))))
+                                 
         ; x-x = 0
         (rewrite (BitVec___sub__ x x) (BitVec___init__ 0))
+
+        ; x-0 = x         
+        (rewrite (BitVec___sub__ x (BitVec___init__ 0)) x)
+                                 
+        ; 0-x = x         
+        (rewrite (BitVec___sub__ (BitVec___init__ 0) x) (BitVec___neg__ x))   
+                                 
+        ; a-b = a + (-b)
+        (rewrite (BitVec___sub__ a b) (BitVecSet__add__ (multiset-of a (BitVec___neg__ b))))
 
         ; ~(~x) = x
         (rewrite (BitVec___invert__ (BitVec___invert__ x)) x)
@@ -53,12 +70,9 @@ class EggMultiset(EggModel):
         ; x << 0 = x
         (rewrite (BitVec___lshift__ x (BitVec___init__ 0)) x)
 
-        ; ~(-x) = x-1
-        (rewrite (BitVec___invert__ (BitVec___neg__ x)) (BitVec___sub__ x (BitVec___init__ 1)))
-
         ; -(~x) = x+1
-        (rewrite (BitVec___neg__ (BitVec___invert__ x)) (BitVecSet__add__ (multiset-of x (BitVec___init__ 1))))
-
+        ;(rewrite (BitVec___neg__ (BitVec___invert__ x)) (BitVecSet__add__ (multiset-of x (BitVec___init__ 1))))
+                                 
         ; x & 0 = 0
         (rule
         (
@@ -76,11 +90,35 @@ class EggMultiset(EggModel):
         )
         ((union setv(BitVec___init__ 0)))
         )
-        """
-
-        # add rules
-        commands = parse_program(egg_rewrites)
+        """)
         self.egraph.run_program(*commands)
+
+        commands = parse_program("""
+        ;  -x = (~x + 1)
+        (rewrite (BitVec___neg__ x) (BitVecSet__add__ (multiset-of (BitVec___invert__ x) (BitVec___init__ 1))))
+
+        ;  (~x + 1) = -x
+        (rule
+        (
+            (= setv (BitVecSet__add__ set-inner))
+            (= num-a (BitVec___invert__ x))
+            (multiset-contains set-inner num-a)
+            (= without-a (multiset-remove set-inner num-a))
+            (= num-b (BitVec___init__ 1))
+            (multiset-contains without-a num-b)
+            (= without-b (multiset-remove without-a num-b))
+        )
+        (
+            (union setv (BitVecSet__add__ (multiset-insert without-b (BitVec___neg__ x))))
+        )
+        )               
+        """)
+        # this sometimes improves results, sometimes makes them worse
+        # causes 2x grow in nodes
+        #self.egraph.run_program(*commands)
+
+
+
 
         for operator in ["__add__", "__mul__", "__and__", "__xor__", "__or__"]:
             # This rule is turning nested bitvecsets into one big set
@@ -94,7 +132,7 @@ class EggMultiset(EggModel):
                 )
                 (
                     (union setv (BitVecSet{operator} merge))
-                    ;(delete (BitVecSet{operator} set-inner))
+                    (delete (BitVecSet{operator} set-inner))
                 )
             )
             """)
@@ -135,11 +173,94 @@ class EggMultiset(EggModel):
                 )
                 (
                     (union setv (BitVecSet__mul__ (multiset-insert without-a (BitVec___neg__ num-a))))
+                    ;(delete (BitVec___neg__ (BitVecSet__mul__ set-inner)))
+                )
+            )
+            """)
+            # I see no improvement from this as of now (but +30% node growth)
+            #self.egraph.run_program(*commands)
+
+        # De Morgan's Law
+        commands = parse_program("""              
+        ; newer versio needs  constructor here
+        ; (constructor tmp-invert-fn (BitVec) BitVec) 
+        (function tmp-invert-fn (BitVec) BitVec)
+
+        (rule ((= tmp (tmp-invert-fn x)))
+            ((union tmp (BitVec___invert__ x))
+            (delete (tmp-invert-fn x)))
+        )
+        ;  ~(a & b & c) <-> (~a | ~b | ~c)                   
+        (rule (
+                (= outer-term (BitVec___invert__ (BitVecSet__and__ bc)))
+                (> (multiset-length bc) 1)
+            )
+            (
+                (union outer-term (BitVecSet__or__  (unstable-multiset-map (unstable-fn "tmp-invert-fn") bc)))
+            )
+        )
+        ;  ~(a | b | c) <-> (~a & ~b & ~c)                   
+        (rule (
+                (= outer-term (BitVec___invert__ (BitVecSet__or__ bc)))
+                (> (multiset-length bc) 1)
+            )
+            (
+                (union outer-term (BitVecSet__and__  (unstable-multiset-map (unstable-fn "tmp-invert-fn") bc)))
+            )
+        )                   
+        """)
+        self.egraph.run_program(*commands)
+
+
+
+        # Distributivity
+        commands = parse_program("""
+        ; newer version needs ":no-merge" here
+        (function tmp-distributivity-fn (BitVecMultiSet BitVec) BitVec)           
+        (rule ((= tmp (tmp-distributivity-fn xs x)))
+            ((union tmp (BitVecSet__mul__ (multiset-insert xs x)))
+            (delete (tmp-distributivity-fn xs x)))
+        )              
+
+        (rule
+        (
+            (= sum (BitVecSet__add__ bc))
+            (= product (BitVecSet__mul__ product-inner))
+            (multiset-contains product-inner sum)
+            (> (multiset-length product-inner) 1)
+            (= a (multiset-remove product-inner sum))
+        )
+        (
+            (union product (BitVecSet__add__ (unstable-multiset-map (unstable-fn "tmp-distributivity-fn" a) bc)))
+        )
+        )
+        """)
+        self.egraph.run_program(*commands)
+
+        # Inverse Distributivity
+        # TODO
+
+        for constructors in ["BitVec___init__ x", "BitVec_var x", 
+                            "BitVec___sub__ x y",
+                            "BitVec___lshift__ x y", "BitVec___rshift__ x y",
+                            "BitVec___invert__ x",  "BitVec___neg__ x",
+                            "BitVecSet__add__ x", "BitVecSet__mul__ x", "BitVecSet__and__ x",
+                            "BitVecSet__xor__ x", "BitVecSet__or__ x"]:
+            # normalisation, pushing negatives to up
+            commands = parse_program(f"""
+            (rule
+                (
+                    (= setv (BitVecSet__mul__ set-inner))
+                    (= num-a (BitVec___neg__ ({constructors}))) 
+                    (multiset-contains set-inner num-a)
+                    (= without-a (multiset-remove set-inner num-a))
+                )
+                (
+                    (union setv (BitVec___neg__ (BitVecSet__mul__ (multiset-insert without-a ({constructors})))))
                 )
             )
             """)
             self.egraph.run_program(*commands)
-
 
         for operator, int_operator in [("__add__", "+"), ("__mul__", "*"), ("__and__", "&"), ("__xor__", "^"), ("__or__", "|")]:
             # rules to simplify 2 constants into 1
@@ -158,9 +279,7 @@ class EggMultiset(EggModel):
                     (BitVecSet{operator} set-inner)
                     (BitVecSet{operator} (multiset-insert (multiset-remove without-a num-b) (BitVec___init__ ({int_operator} a b))))
                 )
-                (delete (BitVecSet{operator} set-inner))
-                (delete (BitVecSet{operator} (multiset-remove set-inner num-a)))
-                (delete (BitVecSet{operator} (multiset-remove set-inner num-b)))
+                ;(delete (BitVecSet{operator} set-inner))
             )
             )
             """)
@@ -198,7 +317,7 @@ class EggMultiset(EggModel):
             )
             """)
             self.egraph.run_program(*commands)
-            
+
 
         # Trivial identities (double occurance)
 
@@ -216,7 +335,6 @@ class EggMultiset(EggModel):
         )
         (
         (union setv (BitVecSet__and__ without-a))
-        (delete (BitVecSet__and__ set-inner))
         )
         )
 
@@ -232,7 +350,6 @@ class EggMultiset(EggModel):
         )
         (
         (union setv (BitVecSet__or__ without-a))
-        (delete (BitVecSet__or__ set-inner))
         )
         )
         ; x^x = 0
@@ -247,7 +364,6 @@ class EggMultiset(EggModel):
         )
         (
         (union setv (BitVecSet__xor__ (multiset-remove without-a num-a)))
-        (delete (BitVecSet__xor__ set-inner))
         )
         )
         """)
@@ -281,12 +397,26 @@ class EggMultiset(EggModel):
                 return [self._parse_term_dag(termdag, a) for a in arg]
             elif f.startswith("BitVecSet"):
                 _set = self._parse_term_dag(termdag, arg[0])
-                r = I64Node(0) if len(_set) == 0 else _set[0]
+                if len(_set) == 0 and f.endswith("__mul__"): return I64Node(1) 
+                if len(_set) == 0: return I64Node(0) 
+                r = _set[0]
                 if f.endswith("__add__"):
-                    for i in range(1, len(_set)):
-                        r = r + _set[i]
+                    for startIndex in range(len(_set)):
+                        if not (isinstance(_set[startIndex],CallNode) and _set[startIndex].value == CallType.NEG):
+                            break
+                    r = _set[startIndex] # start with addition to optimize out one neg
+                    for i in range(len(_set)):
+                        if i == startIndex: continue
+                        # simplification for +(-(x)) to -x
+                        if isinstance(_set[i],CallNode) and _set[i].value == CallType.NEG:
+                            r = r - _set[i].children[0]
+                        else:
+                            r = r + _set[i]
                 elif f.endswith("__mul__"):
+                    sign = True
                     for i in range(1, len(_set)):
+                        #if isinstance(_set[i],CallNode) and _set[i].value == CallType.NEG:
+                        #    sign = not sign
                         r = r * _set[i]
                 elif f.endswith("__and__"):
                     for i in range(1, len(_set)):
@@ -299,6 +429,8 @@ class EggMultiset(EggModel):
                         r = r | _set[i]
                 else:
                     assert False
+            else:
+                raise Exception("Unknown function "+f)
             return r
         else:
             assert False
@@ -338,7 +470,7 @@ class EggMultiset(EggModel):
     })
 
     def extract(self, ast:Node, include_cost:bool=False) -> Tuple[Node,bool] | Node:
-
+        #return ast
         if ast not in self.let_cache:
             #extract_cmd = "(extract "+self._ast_to_egg_str(ast)+" 0)"
             #self.egraph.run_program(*parse_program(extract_cmd))
@@ -410,6 +542,7 @@ class EggMultiset(EggModel):
             for args in itertools.product(*[self._traverse_egraph_nodes(nodes, nodeclass[child], eclasses, nodeclass, seen, subexprs, maxim) for child in nodes[node]["children"]]):
                 if maxim != -1 and len(subexprs) >= maxim: return
                 r = (nodes[node]["op"], args)
+                if r[0] == "tmp-invert-fn" or r[0] == "tmp-distributivity-fn": continue
                 #r = self.json_to_ast(r)
                 # add subexprs to output set
                 subexprs.add(r)
@@ -455,10 +588,21 @@ class EggMultiset(EggModel):
             return VarNode(self.json_to_ast(arg[0]))
         elif f.startswith("BitVecSet"):
             _set = self.json_to_ast(arg[0])
-            r = I64Node(0) if len(_set) == 0 else _set[0]
+            if len(_set) == 0 and f.endswith("__mul__"): return I64Node(1) 
+            if len(_set) == 0: return I64Node(0) 
+            r = _set[0]
             if f.endswith("__add__"):
-                for i in range(1, len(_set)):
-                    r = r + _set[i]
+                for startIndex in range(len(_set)):
+                    if not (isinstance(_set[startIndex],CallNode) and _set[startIndex].value == CallType.NEG):
+                        break
+                r = _set[startIndex] # start with addition to optimize out one neg
+                for i in range(len(_set)):
+                    if i == startIndex: continue
+                    # simplification for +(-(x)) to -x
+                    if isinstance(_set[i],CallNode) and _set[i].value == CallType.NEG:
+                        r = r - _set[i].children[0]
+                    else:
+                        r = r + _set[i]
             elif f.endswith("__mul__"):
                 for i in range(1, len(_set)):
                     r = r * _set[i]

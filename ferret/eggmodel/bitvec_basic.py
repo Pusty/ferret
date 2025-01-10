@@ -30,6 +30,7 @@ def _get_bitvec_basic_rules():
   )
  )
 
+ ; Integer simplification
 (rewrite (BitVec___add__ (BitVec___init__ i) (BitVec___init__ j)) (BitVec___init__ (+ i j)))
 (rewrite (BitVec___sub__ (BitVec___init__ i) (BitVec___init__ j)) (BitVec___init__ (- i j)))
 (rewrite (BitVec___and__ (BitVec___init__ i) (BitVec___init__ j)) (BitVec___init__ (& i j)))
@@ -38,11 +39,15 @@ def _get_bitvec_basic_rules():
 (rewrite (BitVec___lshift__ (BitVec___init__ i) (BitVec___init__ j)) (BitVec___init__ (<< i j)))
 (rewrite (BitVec___rshift__ (BitVec___init__ i) (BitVec___init__ j)) (BitVec___init__ (>> i j)))
 (rewrite (BitVec___mul__ (BitVec___init__ i) (BitVec___init__ j)) (BitVec___init__ (* i j)))
+
+; Commutativity
 (rewrite (BitVec___mul__ x y) (BitVec___mul__ y x))
 (rewrite (BitVec___add__ x y) (BitVec___add__ y x))
 (rewrite (BitVec___and__ x y) (BitVec___and__ y x))
 (rewrite (BitVec___xor__ x y) (BitVec___xor__ y x))
 (rewrite (BitVec___or__ x y) (BitVec___or__ y x))
+
+; Associativity
 (rewrite (BitVec___mul__ x (BitVec___mul__ y z)) (BitVec___mul__ (BitVec___mul__ x y) z))
 (rewrite (BitVec___mul__ (BitVec___mul__ x y) z) (BitVec___mul__ x (BitVec___mul__ y z)))
 (rewrite (BitVec___add__ x (BitVec___add__ y z)) (BitVec___add__ (BitVec___add__ x y) z))
@@ -53,46 +58,82 @@ def _get_bitvec_basic_rules():
 (rewrite (BitVec___xor__ (BitVec___xor__ x y) z) (BitVec___xor__ x (BitVec___xor__ y z)))
 (rewrite (BitVec___or__ x (BitVec___or__ y z)) (BitVec___or__ (BitVec___or__ x y) z))
 (rewrite (BitVec___or__ (BitVec___or__ x y) z) (BitVec___or__ x (BitVec___or__ y z)))
-(rewrite (BitVec___invert__ (BitVec___mul__ x y)) (BitVec___add__ (BitVec___mul__ (BitVec___invert__ x) y) (BitVec___sub__ y (BitVec___init__ 1))))
-(rewrite (BitVec___invert__ (BitVec___add__ x y)) (BitVec___add__ (BitVec___invert__ x) (BitVec___add__ (BitVec___invert__ y) (BitVec___init__ 1))))
-(rewrite (BitVec___invert__ (BitVec___sub__ x y)) (BitVec___sub__ (BitVec___invert__ x) (BitVec___add__ (BitVec___invert__ y) (BitVec___init__ 1))))
+
+; Normalisation invert
+; no change observed?
+;(rewrite (BitVec___invert__ (BitVec___mul__ x y)) (BitVec___add__ (BitVec___mul__ (BitVec___invert__ x) y) (BitVec___sub__ y (BitVec___init__ 1))))
+;(rewrite (BitVec___invert__ (BitVec___add__ x y)) (BitVec___add__ (BitVec___invert__ x) (BitVec___add__ (BitVec___invert__ y) (BitVec___init__ 1))))
+;(rewrite (BitVec___invert__ (BitVec___sub__ x y)) (BitVec___sub__ (BitVec___invert__ x) (BitVec___add__ (BitVec___invert__ y) (BitVec___init__ 1))))
+;(rewrite (BitVec___invert__ (BitVec___xor__ x y)) (BitVec___or__ (BitVec___and__ x y) (BitVec___invert__ (BitVec___or__ x y))))
+
+; De Morgan
 (rewrite (BitVec___invert__ (BitVec___and__ x y)) (BitVec___or__ (BitVec___invert__ x) (BitVec___invert__ y)))
-(rewrite (BitVec___invert__ (BitVec___xor__ x y)) (BitVec___or__ (BitVec___and__ x y) (BitVec___invert__ (BitVec___or__ x y))))
 (rewrite (BitVec___invert__ (BitVec___or__ x y)) (BitVec___and__ (BitVec___invert__ x) (BitVec___invert__ y)))
-(rewrite (BitVec___neg__ (BitVec___mul__ x y)) (BitVec___mul__ (BitVec___neg__ x) y))
-(rewrite (BitVec___neg__ (BitVec___mul__ x y)) (BitVec___mul__ x (BitVec___neg__ y)))
-(rewrite (BitVec___neg__ x) (BitVec___add__ (BitVec___invert__ x) (BitVec___init__ 1)))
-(rewrite (BitVec___add__ (BitVec___invert__ x) (BitVec___init__ 1)) (BitVec___neg__ x))
-(rewrite (BitVec___sub__ x y) (BitVec___add__ x (BitVec___neg__ y)))
-(rewrite (BitVec___add__ x (BitVec___neg__ y)) (BitVec___sub__ x y))
-(rewrite (BitVec___add__ (BitVec___mul__ x y) (BitVec___mul__ x z)) (BitVec___mul__ x (BitVec___add__ y z)))
-(rewrite (BitVec___sub__ (BitVec___mul__ x y) (BitVec___mul__ x z)) (BitVec___mul__ x (BitVec___sub__ y z)))
-(rewrite (BitVec___add__ (BitVec___mul__ x y) y) (BitVec___mul__ (BitVec___add__ x (BitVec___init__ 1)) y))
-(rewrite (BitVec___add__ x x) (BitVec___mul__ (BitVec___init__ 2) x))
-(rewrite (BitVec___or__ (BitVec___xor__ x y) y) (BitVec___or__ x y))
-(rewrite (BitVec___mul__ x (BitVec___neg__ y)) (BitVec___neg__ (BitVec___mul__ x y)))
+
+; Normalisation negate
+; no observed change?
+;(rewrite (BitVec___neg__ (BitVec___mul__ x y)) (BitVec___mul__ (BitVec___neg__ x) y))
+;(rewrite (BitVec___neg__ (BitVec___mul__ x y)) (BitVec___mul__ x (BitVec___neg__ y)))
+
+; Equalities
+; seems useful
+;(rewrite (BitVec___neg__ x) (BitVec___add__ (BitVec___invert__ x) (BitVec___init__ 1)))
+;(rewrite (BitVec___add__ (BitVec___invert__ x) (BitVec___init__ 1)) (BitVec___neg__ x))
+;(rewrite (BitVec___add__ x (BitVec___neg__ y)) (BitVec___sub__ x y))
+; this rule increases blowup massively
+;(rewrite (BitVec___sub__ x y) (BitVec___add__ x (BitVec___neg__ y)))
+
+; Inverse distributivity
+; seems useful
+;(rewrite (BitVec___add__ (BitVec___mul__ x y) (BitVec___mul__ x z)) (BitVec___mul__ x (BitVec___add__ y z)))
+;(rewrite (BitVec___sub__ (BitVec___mul__ x y) (BitVec___mul__ x z)) (BitVec___mul__ x (BitVec___sub__ y z)))
+
+; Collapsing
+; no observed change?
+;(rewrite (BitVec___add__ (BitVec___mul__ x y) y) (BitVec___mul__ (BitVec___add__ x (BitVec___init__ 1)) y))
+;(rewrite (BitVec___add__ x x) (BitVec___mul__ (BitVec___init__ 2) x))
+;(rewrite (BitVec___or__ (BitVec___xor__ x y) y) (BitVec___or__ x y))
+
+; Swapping
+; no observed change?
+;(rewrite (BitVec___mul__ x (BitVec___neg__ y)) (BitVec___neg__ (BitVec___mul__ x y)))
+
+; Distributivity
 (rewrite (BitVec___mul__ (BitVec___add__ x y) z) (BitVec___add__ (BitVec___mul__ x z) (BitVec___mul__ y z)))
 (rewrite (BitVec___mul__ (BitVec___sub__ x y) z) (BitVec___sub__ (BitVec___mul__ x z) (BitVec___mul__ y z)))
-(rewrite (BitVec___neg__ (BitVec___add__ x y)) (BitVec___add__ (BitVec___neg__ x) (BitVec___neg__ y)))
-(rewrite (BitVec___lshift__ (BitVec___and__ x y) z) (BitVec___and__ (BitVec___lshift__ x z) (BitVec___lshift__ y z)))
-(rewrite (BitVec___lshift__ (BitVec___rshift__ x z) z) (BitVec___and__ x (BitVec___invert__ (BitVec___sub__ (BitVec___lshift__ (BitVec___init__ 1) z) (BitVec___init__ 1)))))
-(rewrite (BitVec___sub__ y (BitVec___and__ (BitVec___invert__ x) y)) (BitVec___and__ x y))
-(rewrite (BitVec___add__ (BitVec___lshift__ x z) (BitVec___lshift__ y z)) (BitVec___lshift__ (BitVec___add__ x y) z))
-(rewrite (BitVec___lshift__ (BitVec___lshift__ x y) z) (BitVec___lshift__ (BitVec___lshift__ x z) y))
-(rewrite (BitVec___sub__ (BitVec___or__ x y) (BitVec___and__ (BitVec___invert__ x) y)) x)
+
+; Additional rules
+; no observed change?
+;(rewrite (BitVec___neg__ (BitVec___add__ x y)) (BitVec___add__ (BitVec___neg__ x) (BitVec___neg__ y)))
+;(rewrite (BitVec___lshift__ (BitVec___and__ x y) z) (BitVec___and__ (BitVec___lshift__ x z) (BitVec___lshift__ y z)))
+;(rewrite (BitVec___lshift__ (BitVec___rshift__ x z) z) (BitVec___and__ x (BitVec___invert__ (BitVec___sub__ (BitVec___lshift__ (BitVec___init__ 1) z) (BitVec___init__ 1)))))
+;(rewrite (BitVec___sub__ y (BitVec___and__ (BitVec___invert__ x) y)) (BitVec___and__ x y))
+;(rewrite (BitVec___add__ (BitVec___lshift__ x z) (BitVec___lshift__ y z)) (BitVec___lshift__ (BitVec___add__ x y) z))
+;(rewrite (BitVec___lshift__ (BitVec___lshift__ x y) z) (BitVec___lshift__ (BitVec___lshift__ x z) y))
+;(rewrite (BitVec___sub__ (BitVec___or__ x y) (BitVec___and__ (BitVec___invert__ x) y)) x)
+
+; Trivial identities
+
 (rewrite (BitVec___add__ (BitVec___init__ 0) x) x)
 (rewrite (BitVec___sub__ x (BitVec___init__ 0)) x)
 (rewrite (BitVec___mul__ x (BitVec___init__ 1)) x)
-(rewrite (BitVec___and__ x x) x)
-(rewrite (BitVec___or__ x x) x)
-(rewrite (BitVec___invert__ (BitVec___invert__ x)) x)
-(rewrite (BitVec___neg__ (BitVec___neg__ x)) x)
 (rewrite (BitVec___or__ x (BitVec___init__ 0)) x)
 (rewrite (BitVec___xor__ x (BitVec___init__ 0)) x)
+
+(rewrite (BitVec___and__ x x) x)
+(rewrite (BitVec___or__ x x) x)
+
+(rewrite (BitVec___invert__ (BitVec___invert__ x)) x)
+(rewrite (BitVec___neg__ (BitVec___neg__ x)) x)
 (rewrite (BitVec___rshift__ x (BitVec___init__ 0)) x)
 (rewrite (BitVec___lshift__ x (BitVec___init__ 0)) x)
-(rewrite (BitVec___invert__ (BitVec___neg__ x)) (BitVec___sub__ x (BitVec___init__ 1)))
-(rewrite (BitVec___neg__ (BitVec___invert__ x)) (BitVec___add__ x (BitVec___init__ 1)))
+
+;(rewrite (BitVec___invert__ (BitVec___neg__ x)) (BitVec___sub__ x (BitVec___init__ 1)))
+
+; seems unhelpful?
+;(rewrite (BitVec___neg__ (BitVec___invert__ x)) (BitVec___add__ x (BitVec___init__ 1)))
+
+;  Null terms
 (rewrite (BitVec___and__ x (BitVec___init__ 0)) (BitVec___init__ 0))
 (rewrite (BitVec___xor__ x x) (BitVec___init__ 0))
 (rewrite (BitVec___sub__ x x) (BitVec___init__ 0))
@@ -105,7 +146,7 @@ def _get_bitvec_basic_rules():
 class EggBasic(EggModel):
 
     def __init__(self):
-        self.egraph = EGraph()
+        self.egraph = EGraph(record=True)
         # register basic rules
         self.egraph.run_program(*_get_bitvec_basic_rules())
         self.display_step = []

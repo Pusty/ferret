@@ -55,3 +55,6 @@ def getDataset(maximum=-1, skip=0):
                 if i >= skip: yield (datasetName, str_to_ast(row[0], var_dict), str_to_ast(row[1], var_dict))
                 i += 1
                 if maximum != -1 and i >= maximum: break
+
+def getDatasetCount():
+    return 1

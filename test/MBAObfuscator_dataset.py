@@ -13,7 +13,7 @@ ground_linear_poly_groundtruth = []
 
 
 def parseDataset(maximum=-1):
-    if len(ground_linear_nonpoly) != 0: return [("ground_linear_nonpoly", ground_linear_nonpoly, ground_linear_nonpoly_groundtruth), ("ground_linear_poly", ground_linear_poly, ground_linear_poly_groundtruth)]
+    if len(ground_linear_nonpoly) != 0: return [("ground.linear.nonpoly", ground_linear_nonpoly, ground_linear_nonpoly_groundtruth), ("ground.linear.poly", ground_linear_poly, ground_linear_poly_groundtruth)]
     PROJECT_PATH = os.getcwd()
     DATASET_PATH = os.path.join(
         PROJECT_PATH,"thirdparty", "MBA-Obfuscator", "samples"
@@ -44,7 +44,7 @@ def parseDataset(maximum=-1):
             if maximum != -1 and i >= maximum: break
 
     print("MBA-Obfuscator Dataset parsed")
-    return [("ground_linear_nonpoly", ground_linear_nonpoly, ground_linear_nonpoly_groundtruth), ("ground_linear_poly", ground_linear_poly, ground_linear_poly_groundtruth)]
+    return [("ground.linear.nonpoly", ground_linear_nonpoly, ground_linear_nonpoly_groundtruth), ("ground.linear.poly", ground_linear_poly, ground_linear_poly_groundtruth)]
 
 def getDataset(maximum=-1, skip=0):
     PROJECT_PATH = os.getcwd()
@@ -56,7 +56,7 @@ def getDataset(maximum=-1, skip=0):
     for v in ["x","y","z","t"]:
         var_dict[v] = VarNode(v)
         
-    datasetNames = ["ground_linear_nonpoly", "ground_linear_poly"]
+    datasetNames = ["ground.linear.nonpoly", "ground.linear.poly"]
     for datasetName in datasetNames:
         with open(os.path.join(DATASET_PATH, datasetName+".txt"), newline='') as csvfile:
             spamreader = csv.reader(csvfile, delimiter=',')
@@ -66,3 +66,6 @@ def getDataset(maximum=-1, skip=0):
                 if i >= skip: yield (datasetName, str_to_ast(row[2], var_dict), str_to_ast(row[1], var_dict))
                 i += 1
                 if maximum != -1 and i >= maximum: break
+
+def getDatasetCount():
+    return 2

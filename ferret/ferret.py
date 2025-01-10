@@ -16,6 +16,8 @@ def apply_eqprov(egg: EggModel, eqprov: EqualityProvider, ast: Node):
     success, sasts = eqprov.simplify(ast)
     if success:
         for sast in sasts: 
+            # don't add more expensive equalities
+            if ast_cost(sast) > ast_cost(ast): continue
             egg.union(ast, sast)
             assert_oracle_equality(ast, sast)
     else:
@@ -116,7 +118,7 @@ def test_oracle_equality(astA: Node, astB: Node, N=10, doAssert=False):
         evalA = eval_ast(astA, varMap)
         evalB = eval_ast(astB, varMap)
         if doAssert:
-            assert evalA  == evalB , astA + " != " + astB +" for "+str(varMap)+" resulting in "+str((evalA, evalB))
+            assert evalA == evalB , str(astA) + " != " + str(astB) +" for "+str(varMap)+" resulting in "+str((evalA, evalB))
         else:
             if evalA != evalB: return False
     return True

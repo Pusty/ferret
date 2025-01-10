@@ -3,7 +3,9 @@ import ferret
 from multiprocessing import Pool
 import tqdm
 
-import test.MBABlast_dataset as mbaobf_dataset
+import test.MBABlast_dataset as mbablast_dataset
+import test.MBAObfuscator_dataset as mbaobf_dataset
+import test.MBASolver_dataset as mbasol_dataset
 
 
 def test_eqprovs_sample(sample, equalityprovders):
@@ -16,23 +18,27 @@ def test_eqprovs_sample(sample, equalityprovders):
     cost_before = ferret.ast_cost(expr)
 
     # Apply (max) 8 runs of rules and equality providers then get cost out
-    egg = ferret.create_graph("basic")
+    egg = ferret.create_graph("multiset")
 
 
     # These settings are for bitvec_basic
     #ferret.iter_simplify(egg, expr, equalityprovders, 4)
     #ferret.all_simplify(egg, expr, equalityprovders, 3)
 
-    egg.run = lambda x: None
-    ferret.all_simplify(egg, expr, equalityprovders, 3, 10000, 500)
+    #egg.run = lambda x: None
+    #ferret.all_simplify(egg, expr, equalityprovders, 3, 10000, 500)
 
     # These settings are for bitvec_multiset
     #ferret.iter_simplify(egg, expr, equalityprovders, 20, 50000)
-    #ferret.all_simplify(egg, expr, equalityprovders, 3, 10000, 10000)
+    ferret.all_simplify(egg, expr, equalityprovders, 3, 10000, 10000)
 
     expr_out = egg.extract(expr)
 
     cost_after = ferret.ast_cost(expr_out)
+
+    #f = open("eggdump.txt", "w")
+    #f.write(egg.egraph.commands())
+    #f.close()
 
     # Verify expressions through testing random values
     ferret.assert_oracle_equality(gexpr, expr_out)
@@ -58,17 +64,20 @@ def test_eqprovs(dataset_generator, equalityprovders):
             ab_accum = 0
             cur_dataset = dataset_name
             sample_size = 0
-        cost_groundtruth, cost_before, cost_after = test_eqprovs_sample(sample, equalityprovders)
-        groundtruth_accum += cost_groundtruth
-        start_value_accum += cost_before
-        end_value_accum   += cost_after
-        ab_accum          += (cost_after / start_value_accum)
+
+        if True: #sample_size == 87:
+            cost_groundtruth, cost_before, cost_after = test_eqprovs_sample(sample, equalityprovders)
+            groundtruth_accum += cost_groundtruth
+            start_value_accum += cost_before
+            end_value_accum   += cost_after
+            ab_accum          += (cost_after / start_value_accum)
+
         sample_size += 1
 
-        print("\t", "Average Ground Cost", (groundtruth_accum/sample_size))
-        print("\t", "Average Before Cost", (start_value_accum/sample_size))
-        print("\t", "Average After  Cost", (end_value_accum/sample_size))
-        print("\t", "A/B (%)", (ab_accum/sample_size)*100, "%")
+    print("\t", "Average Ground Cost", (groundtruth_accum/sample_size))
+    print("\t", "Average Before Cost", (start_value_accum/sample_size))
+    print("\t", "Average After  Cost", (end_value_accum/sample_size))
+    print("\t", "A/B (%)", (ab_accum/sample_size)*100, "%")
 
 
 def test_eqprovs_sample_wrapper(tupleThingy):
@@ -102,15 +111,15 @@ def run_all_tests():
     simbaref = ferret.SiMBAEqualityProviderReference()
 
     amount = 100
-    dataset = lambda: mbaobf_dataset.getDataset(amount, skip=0)
+    dataset = lambda: mbablast_dataset.getDataset(amount, skip=0)
 
 
 
 
-    benchmark_eqprovs(dataset(), [], amount)
-    benchmark_eqprovs(dataset(), [llp], amount)
-    benchmark_eqprovs(dataset(), [mbabp], amount)
-    benchmark_eqprovs(dataset(), [qsynth], amount)
+    #benchmark_eqprovs(dataset(), [], amount)
+    #benchmark_eqprovs(dataset(), [llp], amount)
+    #benchmark_eqprovs(dataset(), [mbabp], amount)
+    #benchmark_eqprovs(dataset(), [qsynth], amount)
     benchmark_eqprovs(dataset(), [simbaref], amount)
 
     """
@@ -156,20 +165,72 @@ def run_qsynth_test():
 def run_simba_test():
     import test.test_simba
 
+
+def run_multiset_test_lambda(inpTuple):
+    _, expr, gexpr = inpTuple[0]
+
+    #cost_groundtruth = ferret.ast_cost(gexpr)
+    #cost_before = ferret.ast_cost(expr)
+
+    eggBasic = ferret.create_graph("basic")
+    eggMultiset = ferret.create_graph("multiset")
+
+    for i in range(6):
+        eggBasic.simplify(expr)
+        eggMultiset.simplify(expr)
+
+    cost_basic = ferret.ast_cost(eggBasic.extract(expr))
+    cost_multiset = ferret.ast_cost(eggMultiset.extract(expr))
+
+    nodes_basic = eggBasic.nodecount()
+    nodes_multiset = eggMultiset.nodecount()
+
+    if cost_basic < cost_multiset and False:
+        print(inpTuple[1], cost_basic," <-> ", cost_multiset, "(", nodes_basic, "/", nodes_multiset,")","#",expr)
+        #print(eggMultiset.egraph.commands())
+        print(";\t", eggBasic.extract(expr, include_cost=True))
+        print(";\t", eggMultiset.extract(expr, include_cost=True))
+        #exit(0)
+        
+    return (cost_basic, nodes_basic, cost_multiset, nodes_multiset)
+
+
+def run_multiset_test():
+    
+    amount = 500
+    dataset_class = mbasol_dataset
+    dataset = [x for x in dataset_class.getDataset(amount, skip=0)]
+
+    
+    with Pool(10) as p:
+        results = list(tqdm.tqdm(p.imap(run_multiset_test_lambda, ([d, i] for i, d in enumerate(dataset))), total=amount*dataset_class.getDatasetCount()))
+    #if True:
+    #    results = [run_multiset_test_lambda((d, i)) for i, d in enumerate(dataset)]
+        sample_size = len(results)
+
+        end_basic_accum = sum((x[0] for x in results))
+        nodes_basic_accum = sum((x[1] for x in results))
+        end_multiset_accum = sum((x[2] for x in results))
+        nodes_multiset_accum = sum((x[3] for x in results))
+
+        print("Basic: ", end_basic_accum/sample_size, "#", nodes_basic_accum/sample_size)
+        print("Multiset: ", end_multiset_accum/sample_size, "#", nodes_multiset_accum/sample_size)
+
+
 #run_llvmlite_test()
 #run_mbablast_test()
 #run_qsynth_test()
 #run_simba_test()
+#run_multiset_test()
 
-#run_all_tests()
+run_all_tests()
 
+#import cProfile as profile
+#import pstats
 
-import cProfile as profile
-import pstats
+#pr = profile.Profile()
+#pr.runcall(run_all_tests)
 
-pr = profile.Profile()
-pr.runcall(run_all_tests)
-
-st = pstats.Stats(pr)
-st.sort_stats('cumtime')
-st.print_stats() # and other methods like print_callees, print_callers, etc.
+#st = pstats.Stats(pr)
+#st.sort_stats('cumtime')
+#st.print_stats() # and other methods like print_callees, print_callers, etc.
