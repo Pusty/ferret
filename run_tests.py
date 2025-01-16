@@ -29,8 +29,8 @@ def test_eqprovs_sample(sample, equalityprovders):
     #ferret.all_simplify(egg, expr, equalityprovders, 3, 10000, 500)
 
     # These settings are for bitvec_multiset
-    #ferret.iter_simplify(egg, expr, equalityprovders, 20, 50000)
-    ferret.all_simplify(egg, expr, equalityprovders, 3, 10000, 10000)
+    ferret.iter_simplify(egg, expr, equalityprovders, 20, 50000)
+    #ferret.all_simplify(egg, expr, equalityprovders, 3, 10000, 10000)
 
     expr_out = egg.extract(expr)
 
@@ -119,8 +119,8 @@ def run_all_tests():
     #benchmark_eqprovs(dataset(), [], amount)
     #benchmark_eqprovs(dataset(), [llp], amount)
     #benchmark_eqprovs(dataset(), [mbabp], amount)
-    #benchmark_eqprovs(dataset(), [qsynth], amount)
-    benchmark_eqprovs(dataset(), [simbaref], amount)
+    benchmark_eqprovs(dataset(), [qsynth], amount)
+    #benchmark_eqprovs(dataset(), [simbaref], amount)
 
     """
     benchmark_eqprovs(dataset(), [llp, mbabp], amount)

@@ -1,13 +1,13 @@
 from .equalityprovider import EqualityProvider
 from .expressionast import *
 
+from .solvers import verify_ast
 
 import plyvel
 import json
 import os
 import array
 import hashlib
-import z3
 
 META_KEY = b"metadatas"
 VARS_KEY = b"variables"
@@ -16,10 +16,8 @@ SIZE_KEY = b"size"
 
 
 PROJECT_PATH = os.getcwd()
-TABLE_PATH = os.path.join(PROJECT_PATH,"qsynth_table", "test_table")
+TABLE_PATH = os.path.join(PROJECT_PATH,"qsynth_table", "msynth_oracle")
 
-
-# TODO: Replace z3 with a faster solver for this specific problem
 
 class QSynthEqualityProvider(EqualityProvider):
 
@@ -184,21 +182,7 @@ class QSynthEqualityProvider(EqualityProvider):
 
 
     def _verify_ast(self, astA, astB, timeout=500, unsafe=True):
-        var_names = get_vars_from_ast(astA) + get_vars_from_ast(astB)
-        z3Vars = {}
-        # Note: This being 8 bit is experimental, should be 64 for full equivalence prove
-        for vN in var_names:
-            z3Vars[vN] = z3.BitVec(vN, 8 if self.verifyReducedPrecision else 64) # especially in safe mode, can we maybe just check if this "also" works for 8 bit so speed it up? (instead of 64 bit)
-        exprA = eval(ast_to_str(astA), z3Vars)
-        exprB = eval(ast_to_str(astB), z3Vars)
-        solver = z3.Solver()
-        solver.set('timeout', timeout)
-        solver.add(exprA != exprB)
-        #print(exprA, "!=", exprB)
-        if unsafe:
-            return solver.check() in [z3.unsat, z3.unknown]
-        else:
-            return solver.check() in [z3.unsat]
+        return verify_ast(astA, astB, {"timeout": timeout, "unsafe": unsafe, "precision": 8 if self.verifyReducedPrecision else 64})
 
     def simplify(self, ast: Node) -> tuple[bool, list[Node]]:
 
@@ -208,7 +192,7 @@ class QSynthEqualityProvider(EqualityProvider):
         simplified = self._synthetize(ast)
         #print("=>", simplified)
 
-        # Z3 verify overall simplification is correct
+        # SMT verify overall simplification is correct
         if self.verifyEnd:
             # unsafe quick check is ok here if we only do safe replacements
             if self._verify_ast(ast, simplified, timeout=500, unsafe=True):

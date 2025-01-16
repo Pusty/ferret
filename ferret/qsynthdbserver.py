@@ -18,7 +18,7 @@ INPUTS_KEY = b"inputs"
 SIZE_KEY = b"size"
 
 PROJECT_PATH = os.getcwd()
-TABLE_PATH = os.path.join(PROJECT_PATH,"qsynth_table", "test_table")
+TABLE_PATH = os.path.join(PROJECT_PATH,"qsynth_table", "msynth_oracle")
 
 
 
