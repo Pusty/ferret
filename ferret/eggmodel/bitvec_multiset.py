@@ -11,7 +11,7 @@ from typing import Tuple, List
 class EggMultiset(EggModel):
 
     def __init__(self):
-        self.egraph = EGraph(record=True)
+        self.egraph = EGraph(record=False)
         self.display_step = []
         self.let_cache = {}
         self.let_index = 0

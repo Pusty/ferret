@@ -146,7 +146,7 @@ def _get_bitvec_basic_rules():
 class EggBasic(EggModel):
 
     def __init__(self):
-        self.egraph = EGraph(record=True)
+        self.egraph = EGraph(record=False)
         # register basic rules
         self.egraph.run_program(*_get_bitvec_basic_rules())
         self.display_step = []

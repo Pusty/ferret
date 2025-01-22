@@ -7,6 +7,7 @@ from .ref.simbaproviderref import SiMBAEqualityProviderReference
 from .mbablastprovider import MBABlastEqualityProvider
 from .qsynthprovider import QSynthEqualityProvider
 from .qsynthdbserver import startQSynthDBServer, stopQSynthDBServer
+from .boolminprovider import BooleanMinifierProvider
 from .ferret import * 
 
 

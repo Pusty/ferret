@@ -1,12 +1,16 @@
 from .equalityprovider import *
+from .solvers import verify_ast
 import random
+import hashlib
+import array
+
 
 from .eggmodel.eggmodel import EggImpl, EggModel, get_eggmodel_impl
 
 # Project Root
 
 def create_graph(model=None) -> EggModel:
-    if model == None: # probably depreciate this
+    if model == None: # probably deprecate this
         egg = EggImpl()
     else:
         egg = get_eggmodel_impl(model)()
@@ -19,11 +23,51 @@ def apply_eqprov(egg: EggModel, eqprov: EqualityProvider, ast: Node):
             # don't add more expensive equalities
             if ast_cost(sast) > ast_cost(ast): continue
             egg.union(ast, sast)
-            assert_oracle_equality(ast, sast)
+            assert_oracle_equality(ast, sast, debug=[eqprov.name()])
     else:
         eqprov.failed(ast)
 
+
+# Merge subexpressions of a graph (given a root expression) by their output behavior
+# Verify correctness using SMT Solver
+def merge_by_output(egg: EggModel, root: Node):
+    classes = {}
+    inpMappings = [{} for i in range(5)]
+
+    # Extract subexpressions
+    for subexpr in egg.extract_all_subexprs(root, 100000):
+        subexpr = egg.json_to_ast(subexpr) # convert them (this is computation heavy at scale)
+        outs = []
+        vars = get_vars_from_ast(subexpr)
+
+        # run the expression against randomized inputs
+        for inpMappingIndex in range(len(inpMappings)):
+            mapping = inpMappings[inpMappingIndex]
+            for var in vars:
+                if var not in mapping:
+                    mapping[var] = random.randint(0, 0xffffffffffffffff)
+            outs.append(eval_ast(subexpr, mapping)&0xffffffffffffffff)
+        
+        # hash the outputs as a eclass key and add it
+        h = hashlib.md5(array.array('Q', outs).tobytes()).digest()
+        if h not in classes:
+            classes[h] = []
+        classes[h].append(subexpr)
     
+    # Go through all classes and union them if applicable
+    for key in classes:
+        # skip unique classes
+        if len(classes[key]) == 1: continue
+        cost_array = [(ast_cost(v), v) for v in classes[key]]
+        cost_array.sort(key=lambda x: x[0])
+        # union with minimal element
+        min_element = cost_array[0][1]
+        for i in range(1, len(cost_array)):
+            astB = cost_array[i][1]
+            # verify using SMT solver that things are equal (or at least check there isn't obvious counter example)
+            if verify_ast(min_element, astB, {"timeout": 100, "unsafe": True, "precision": 64}):
+                egg.union(min_element, astB)
+
 def iter_simplify(egg: EggModel, ast: Node, eqprovs: list[EqualityProvider]=[], inner_max: int=20, max_nodes: int=25000):
     init_cost = egg.cost(ast)
 
@@ -106,7 +150,7 @@ def all_simplify(egg: EggModel, ast: Node, eqprovs: list[EqualityProvider]=[], i
     last_cost = egg.cost(ast)
     return init_cost, last_cost
 
-def test_oracle_equality(astA: Node, astB: Node, N=10, doAssert=False):
+def test_oracle_equality(astA: Node, astB: Node, N=10, doAssert=False, debug=[]):
     varsA = get_vars_from_ast(astA)
     varsB = get_vars_from_ast(astB)
     varsAB = set(varsA) | set(varsB)
@@ -118,10 +162,10 @@ def test_oracle_equality(astA: Node, astB: Node, N=10, doAssert=False):
         evalA = eval_ast(astA, varMap)
         evalB = eval_ast(astB, varMap)
         if doAssert:
-            assert evalA == evalB , str(astA) + " != " + str(astB) +" for "+str(varMap)+" resulting in "+str((evalA, evalB))
+            assert evalA == evalB , str(astA) + " != " + str(astB) +" for "+str(varMap)+" resulting in "+str((evalA, evalB))+" # "+str(debug)
         else:
             if evalA != evalB: return False
     return True
     
-def assert_oracle_equality(astA: Node, astB: Node, N=10):
-    return test_oracle_equality(astA, astB, N=N, doAssert=True)
+def assert_oracle_equality(astA: Node, astB: Node, N=10, debug=[]):
+    return test_oracle_equality(astA, astB, N=N, doAssert=True, debug=debug)

@@ -35,7 +35,7 @@ class MBABlastEqualityProvider(EqualityProvider):
         for i in range(len(basisVec)):
             # I'm lazy and doing replace on placeholder names with basis expressions
             # so it is important that there is no overlap in the prefix
-            name = "X%02X" % i
+            name = "_X%02X_" % i
             placeholders.append(name)
             placeholderMapping[name] = "("+ast_to_str(basisVec[i])+")"
 
@@ -47,7 +47,7 @@ class MBABlastEqualityProvider(EqualityProvider):
     # generate short "AND" basis vectors
     def _generate_basis(self, var_amount):
         basisVec = []
-        vars = ["B%02X" % i for i in range(var_amount)]
+        vars = ["_B%02X_" % i for i in range(var_amount)]
         for i in range(var_amount):
             for comb in itertools.combinations(vars, i+1):
                 n = VarNode(comb[0])
@@ -56,7 +56,7 @@ class MBABlastEqualityProvider(EqualityProvider):
                 basisVec.append(n)
 
         # always true entry    
-        basisVec.append(CallNode(CallType.NOT, [CallNode(CallType.AND, [VarNode("B00"), CallNode(CallType.NOT, [VarNode("B00")])])]))
+        basisVec.append(CallNode(CallType.NOT, [CallNode(CallType.AND, [VarNode("_B00_"), CallNode(CallType.NOT, [VarNode("_B00_")])])]))
         self._add_basis(var_amount, basisVec, vars)
 
     # returns a list of terms that are added together the input term
@@ -169,7 +169,7 @@ class MBABlastEqualityProvider(EqualityProvider):
         A = np.asmatrix(self.truthbasisMap[var_amount]).T
         b = np.asmatrix(truthtable).T
         r = np.linalg.solve(A, b)
-        l = [int(i) for i in np.array(r).reshape(-1,).tolist()]
+        l = [round(i) for i in np.array(r).reshape(-1,).tolist()]
         # would be smart to cache l for truthtable key
         return l
 
@@ -184,7 +184,7 @@ class MBABlastEqualityProvider(EqualityProvider):
         # If the amount of variables has no registered basis cached generate it
         if not var_amount in self.basisMap:
             self._generate_basis(var_amount)
-
+        
         #print(ast)
 
         # 1. Split terms, verify only bitwise within subterms (which have a coefficient), make sure it is linear
@@ -211,7 +211,6 @@ class MBABlastEqualityProvider(EqualityProvider):
     
         coeff_terms = [self._parse_coefficient(ast) for ast in split_ast]
 
-
         #print([(cof, x)  for cof, x in  coeff_terms])
 
         # 3. Turn terms into linear combination of basis vectors
@@ -221,6 +220,7 @@ class MBABlastEqualityProvider(EqualityProvider):
         for cof, cast in coeff_terms:
             tt = self._ast_to_truthtable(cast, var_names)
             ct = self._truthtable_to_coefficients(tt, var_amount)
+
             ctList = []
             for i, v in enumerate(ct):
                 if v == 0: continue
@@ -247,11 +247,22 @@ class MBABlastEqualityProvider(EqualityProvider):
 
         # 4. Apply sympy simplification
 
-        sympyVars = {}
-        for placeholder in self.placeholdersMap[var_amount]:
-            sympyVars[placeholder] = sympy.symbols(placeholder)
+        sympyVars = {placeholder: sympy.symbols(placeholder) for placeholder in self.placeholdersMap[var_amount]}
+        
+        #ev = eval(ast_to_str(lcbv), {}, sympyVars)
+        ev = map_ast(lcbv, lambda x: sympyVars[x], lambda y: y, {
+        CallType.ADD: lambda a, b: a+b,
+        CallType.SUB: lambda a, b: a-b,
+        CallType.MUL: lambda a, b: a*b,
+        CallType.AND: lambda a, b: a&b,
+        CallType.OR: lambda a, b: a|b,
+        CallType.XOR: lambda a, b: a^b,
+        CallType.SHL: lambda a, b: a << b,
+        CallType.SHR: lambda a, b: a >> b,
+        CallType.NOT: lambda a: ~a,
+        CallType.NEG: lambda a: -a,
+        })
 
-        ev = eval(ast_to_str(lcbv), {}, sympyVars)
         # MBA-Blast code implies "**" power can appear?
         ev = str(ev)
         if "**" in ev:
@@ -266,7 +277,7 @@ class MBABlastEqualityProvider(EqualityProvider):
 
             # replace basis variable names with current actual variable names
             for i, v in enumerate(var_names):
-                pB = pB.replace("B%02X" % i, v)
+                pB = pB.replace("_B%02X_" % i, v)
 
             ev = ev.replace(placeholder, pB)
 

@@ -165,6 +165,9 @@ def run_qsynth_test():
 def run_simba_test():
     import test.test_simba
 
+def run_nastyexpr_test():
+    import test.test_nastyexpr
+
 
 def run_multiset_test_lambda(inpTuple):
     _, expr, gexpr = inpTuple[0]
@@ -178,6 +181,10 @@ def run_multiset_test_lambda(inpTuple):
     for i in range(6):
         eggBasic.simplify(expr)
         eggMultiset.simplify(expr)
+
+    
+    #ferret.merge_by_output(eggBasic, expr)
+    ferret.merge_by_output(eggMultiset, expr)
 
     cost_basic = ferret.ast_cost(eggBasic.extract(expr))
     cost_multiset = ferret.ast_cost(eggMultiset.extract(expr))
@@ -197,15 +204,15 @@ def run_multiset_test_lambda(inpTuple):
 
 def run_multiset_test():
     
-    amount = 500
+    amount = 33
     dataset_class = mbasol_dataset
     dataset = [x for x in dataset_class.getDataset(amount, skip=0)]
 
     
-    with Pool(10) as p:
-        results = list(tqdm.tqdm(p.imap(run_multiset_test_lambda, ([d, i] for i, d in enumerate(dataset))), total=amount*dataset_class.getDatasetCount()))
-    #if True:
-    #    results = [run_multiset_test_lambda((d, i)) for i, d in enumerate(dataset)]
+    #with Pool(10) as p:
+    #    results = list(tqdm.tqdm(p.imap(run_multiset_test_lambda, ([d, i] for i, d in enumerate(dataset))), total=amount*dataset_class.getDatasetCount()))
+    if True:
+        results = [run_multiset_test_lambda((d, i)) for i, d in enumerate(dataset)]
         sample_size = len(results)
 
         end_basic_accum = sum((x[0] for x in results))
@@ -217,20 +224,27 @@ def run_multiset_test():
         print("Multiset: ", end_multiset_accum/sample_size, "#", nodes_multiset_accum/sample_size)
 
 
+
+
 #run_llvmlite_test()
 #run_mbablast_test()
 #run_qsynth_test()
 #run_simba_test()
 #run_multiset_test()
 
-run_all_tests()
+run_nastyexpr_test()
 
-#import cProfile as profile
-#import pstats
+#run_all_tests()
 
-#pr = profile.Profile()
-#pr.runcall(run_all_tests)
+"""
+import cProfile as profile
+import pstats
 
-#st = pstats.Stats(pr)
-#st.sort_stats('cumtime')
-#st.print_stats() # and other methods like print_callees, print_callers, etc.
+pr = profile.Profile()
+pr.runcall(run_multiset_test)
+
+st = pstats.Stats(pr)
+st.sort_stats('cumtime')
+st.print_stats() # and other methods like print_callees, print_callers, etc.
+"""
+

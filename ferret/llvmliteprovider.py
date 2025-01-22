@@ -96,6 +96,8 @@ class LLVMLiteEqualityProvider(EqualityProvider):
                         # ignore no signed unwrap flag
                         if " nsw " in line:
                             line = line.replace("nsw ", "")
+                        if " nuw " in line:
+                            line = line.replace("nuw ", "")
                         m1 = re.match(r"(%[^ ]+) = ([^ ]+) i64 ((%[^ ]+)|(-?\d+))", line)
                         m2 = re.match(r"(%[^ ]+) = ([^ ]+) i64 ((%[^ ]+)|(-?\d+)), ((%[^ ]+)|(-?\d+))", line)
                         if m2:
