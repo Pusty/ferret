@@ -50,7 +50,7 @@ class MBABlastEqualityProviderReference(EqualityProvider):
     def __init__(self):
         pass
 
-    def simplify(self, ast: Node) -> tuple[bool, list[Node]]:
+    def simplify(self, ast):
         str_expr = ast_module.unparse(ast_module.parse(ast_to_str(ast))) 
         #.. mba-blasts parser is too fragile to parse redudant brackets..
         str_expr = str_expr.replace(" ", "")
@@ -80,5 +80,5 @@ class MBABlastEqualityProviderReference(EqualityProvider):
         return (True, [res])
 
 
-    def name(self) -> str:
+    def name(self):
         return "MBABlastEqualityProviderReference"

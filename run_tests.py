@@ -225,26 +225,27 @@ def run_multiset_test():
 
 
 
+if __name__ == '__main__':
 
-#run_llvmlite_test()
-#run_mbablast_test()
-#run_qsynth_test()
-#run_simba_test()
-#run_multiset_test()
+    #run_llvmlite_test()
+    #run_mbablast_test()
+    #run_qsynth_test()
+    #run_simba_test()
+    #run_multiset_test()
 
-run_nastyexpr_test()
+    run_nastyexpr_test()
 
-#run_all_tests()
+    #run_all_tests()
 
-"""
-import cProfile as profile
-import pstats
+    """
+    import cProfile as profile
+    import pstats
 
-pr = profile.Profile()
-pr.runcall(run_multiset_test)
+    pr = profile.Profile()
+    pr.runcall(run_multiset_test)
 
-st = pstats.Stats(pr)
-st.sort_stats('cumtime')
-st.print_stats() # and other methods like print_callees, print_callers, etc.
-"""
+    st = pstats.Stats(pr)
+    st.sort_stats('cumtime')
+    st.print_stats() # and other methods like print_callees, print_callers, etc.
+    """
 

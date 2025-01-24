@@ -31,10 +31,10 @@ class QSynthEqualityProviderReference(EqualityProvider):
         print("Failed to apply QSynth Reference to", expr)
         pass
 
-    def name(self) -> str:
+    def name(self) :
         return "QSynthEqualityProviderReference"
     
-    def simplify(self, oast: Node) -> tuple[bool, list[Node]]:
+    def simplify(self, oast):
         var_names = get_vars_from_ast(oast)
 
         ast = self.ctx.getAstContext()

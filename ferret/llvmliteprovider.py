@@ -10,7 +10,6 @@ import llvmlite.binding as llvm
 class LLVMLiteParseException(Exception):
     pass
 
-
 class LLVMLiteEqualityProvider(EqualityProvider):
 
     def __init__(self):
@@ -159,7 +158,7 @@ class LLVMLiteEqualityProvider(EqualityProvider):
 
         
         
-    def simplify(self, ast: Node) -> tuple[bool, list[Node]]:
+    def simplify(self, ast):
 
         #print("IN:", expr_to_str(expr))
 
@@ -185,8 +184,8 @@ class LLVMLiteEqualityProvider(EqualityProvider):
                 
         return succ, opti
     
-    def name(self) -> str:
+    def name(self):
         return "LLVMLiteEqualityProvider"
     
-    def failed(self, ast: Node):
+    def failed(self, ast):
         pass

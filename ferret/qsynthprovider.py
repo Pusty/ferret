@@ -2,9 +2,9 @@ from .equalityprovider import EqualityProvider
 from .expressionast import *
 
 from .solvers import verify_ast
+from .qsynthdb import QSynthDB
 
-import plyvel
-import json
+
 import os
 import array
 import hashlib
@@ -16,32 +16,28 @@ SIZE_KEY = b"size"
 
 
 PROJECT_PATH = os.getcwd()
-TABLE_PATH = os.path.join(PROJECT_PATH,"qsynth_table", "msynth_oracle")
+TABLE_PATH = os.path.join(PROJECT_PATH,"qsynth_table")
 
+
+class QSynthDBDummy(object):
+    def __init__(self):
+        self.inps = None
+        self.vrs = None
+        self.table = None
 
 class QSynthEqualityProvider(EqualityProvider):
 
     # https://github.com/quarkslab/qsynthesis/tree/master
     # https://quarkslab.github.io/qsynthesis/dev_doc/table.html
     # qsynthesis-table-manager generate -bs 64 --var-num 3 --ops SUB,NEG,ADD,XOR,OR --watchdog 85 --input-num 15 --random-level 7 test-table
-    def __init__(self, dbserver=False, verify=True, verifyReducedPrecision=True, verifyTimeout=500,verifyEnd=False):
+    def __init__(self, dbserver=False, dbpath=os.path.join(TABLE_PATH, "msynth_oracle.db"), verify=True, verifyReducedPrecision=True, verifyTimeout=500,verifyEnd=False):
 
         # if using dbserver, connect to Manager when actually trying to simplify
         self.dbserver = dbserver
         if dbserver == False:
-            self.table = plyvel.DB(TABLE_PATH)
-            self.metas = json.loads(self.table.get(META_KEY))
-            self.vrs = list(json.loads(self.table.get(VARS_KEY)).items())
-            self.inps = json.loads(self.table.get(INPUTS_KEY))
-
-            assert self.metas["hash_mode"] == "MD5"
-            for var, bits in self.vrs:
-                assert bits == 64
+            self.db = QSynthDB(dbpath)
         else:
-            self.table = None
-            self.metas = None
-            self.vrs = None
-            self.inps = None
+            self.db = QSynthDBDummy()
 
         self.verify = verify
         self.verifyReducedPrecision = verifyReducedPrecision
@@ -49,12 +45,10 @@ class QSynthEqualityProvider(EqualityProvider):
         self.verifyEnd = verifyEnd
 
     def _verify_connected(self):
-        if self.dbserver and self.table == None:
+        if self.dbserver and self.db.table == None:
             from .qsynthdbserver import connectQSynthProvider
             connectQSynthProvider(self)
-            assert self.metas["hash_mode"] == "MD5"
-            for var, bits in self.vrs:
-                assert bits == 64
+
 
     def _hash(self, outs):
         # hash the values to make table keys
@@ -65,23 +59,23 @@ class QSynthEqualityProvider(EqualityProvider):
 
         # evaluate the expressions with the test values
         outs = []
-        for inp in self.inps:
+        for inp in self.db.inps:
             mapping = {}
             for var in inp:
-                if var in var_remapping: mapping[var_remapping[var]] = inp[var]
+                if var in var_remapping: mapping[var_remapping[var]] = inp[var]&0xffffffffffffffff
             outs.append(eval_ast(ast, mapping)&0xffffffffffffffff)
 
         outsSet = set(outs)
         if len(outsSet) == 1: # constant output
             return str(outsSet.pop()).encode("ascii")
         else:
-            return self.table.get(self._hash(outs))
+            return self.db.table.get(self._hash(outs))
 
-    def failed(self, ast: Node):
+    def failed(self, ast):
         print("Failed to apply QSynth to", ast)
         pass
 
-    def name(self) -> str:
+    def name(self):
         return "QSynthEqualityProvider"
     
     def _lookup_ast(self, ast, var_remapping, placeholders):
@@ -96,7 +90,7 @@ class QSynthEqualityProvider(EqualityProvider):
 
             # make eval variables (and apply remapping)
             varMap = {}
-            for v, bits in self.vrs:
+            for v, bits in self.db.vrs:
                 if v in var_remapping:
                     varMap[v] = VarNode(var_remapping[v])
                 else:
@@ -154,14 +148,14 @@ class QSynthEqualityProvider(EqualityProvider):
         vs = get_vars_from_ast(ast)
 
         # check that the table supports expressions with this many variables
-        if len(vs) > len(self.vrs):
+        if len(vs) > len(self.db.vrs):
             #raise Exception("Too many variables, not supported by the table")
             return None
         
         # map {qsynth var} -> {actual var}
         var_remapping = {}
-        for i in range(min(len(vs), len(self.vrs))):
-            varName, bits = self.vrs[i]
+        for i in range(min(len(vs), len(self.db.vrs))):
+            varName, bits = self.db.vrs[i]
             var_remapping[varName] = vs[i]
 
         return var_remapping
@@ -184,7 +178,7 @@ class QSynthEqualityProvider(EqualityProvider):
     def _verify_ast(self, astA, astB, timeout=500, unsafe=True):
         return verify_ast(astA, astB, {"timeout": timeout, "unsafe": unsafe, "precision": 8 if self.verifyReducedPrecision else 64})
 
-    def simplify(self, ast: Node) -> tuple[bool, list[Node]]:
+    def simplify(self, ast):
 
         self._verify_connected() # check if connected to db if needed
 

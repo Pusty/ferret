@@ -32,7 +32,7 @@ def builtin_to_ast(o):
     raise Exception("Unknown ast conversionm for "+str(o)+" of type "+type(o))
 
 class Node():
-    def __init__(self, nodeType: NodeType):
+    def __init__(self, nodeType):
         self.type = nodeType
     def __getitem__(self, key):
         return [self.type][key]
@@ -82,7 +82,7 @@ class Node():
         return CallNode(CallType.NEG, [builtin_to_ast(self)])
 
 class VarNode(Node):
-    def __init__(self, varname: str):
+    def __init__(self, varname):
         self.type = NodeType.VAR
         self.value = varname
     def __getitem__(self, key):
@@ -97,7 +97,7 @@ class VarNode(Node):
         return hash((self.type, self.value))
     
 class I64Node(Node):
-    def __init__(self, value: int):
+    def __init__(self, value):
         self.type = NodeType.I64
         value = value & 0xffffffffffffffff
         if value > 0x7fffffffffffffff:
@@ -119,7 +119,7 @@ class I64Node(Node):
 from functools import cached_property
 
 class CallNode(Node):
-    def __init__(self, callType: CallType, nodes: list[Node]):
+    def __init__(self, callType, nodes):
         self.type = NodeType.CALL
         self.value = callType
         self.children = nodes
@@ -137,7 +137,7 @@ class CallNode(Node):
         return self._cached_hash
 
     @cached_property
-    def _cached_hash(self) -> int:
+    def _cached_hash(self):
         return  hash((self.type, self.value, hash(tuple(self.children))))
 
 def map_ast(ast, f_var, f_i64, f_call):

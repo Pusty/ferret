@@ -9,14 +9,14 @@ from .eggmodel.eggmodel import EggImpl, EggModel, get_eggmodel_impl
 
 # Project Root
 
-def create_graph(model=None) -> EggModel:
+def create_graph(model=None):
     if model == None: # probably deprecate this
         egg = EggImpl()
     else:
         egg = get_eggmodel_impl(model)()
     return egg
 
-def apply_eqprov(egg: EggModel, eqprov: EqualityProvider, ast: Node):
+def apply_eqprov(egg, eqprov, ast):
     success, sasts = eqprov.simplify(ast)
     if success:
         for sast in sasts: 
@@ -30,7 +30,7 @@ def apply_eqprov(egg: EggModel, eqprov: EqualityProvider, ast: Node):
 
 # Merge subexpressions of a graph (given a root expression) by their output behavior
 # Verify correctness using SMT Solver
-def merge_by_output(egg: EggModel, root: Node):
+def merge_by_output(egg, root):
     classes = {}
     inpMappings = [{} for i in range(5)]
 
@@ -68,7 +68,7 @@ def merge_by_output(egg: EggModel, root: Node):
             if verify_ast(min_element, astB, {"timeout": 100, "unsafe": True, "precision": 64}):
                 egg.union(min_element, astB)
 
-def iter_simplify(egg: EggModel, ast: Node, eqprovs: list[EqualityProvider]=[], inner_max: int=20, max_nodes: int=25000):
+def iter_simplify(egg, ast, eqprovs=[], inner_max=20, max_nodes=25000):
     init_cost = egg.cost(ast)
 
     for eqprov in eqprovs:
@@ -103,7 +103,7 @@ def iter_simplify(egg: EggModel, ast: Node, eqprovs: list[EqualityProvider]=[], 
 
     return init_cost, last_cost
 
-def all_simplify(egg: EggModel, ast: Node, eqprovs: list[EqualityProvider]=[], inner_max: int=5, max_nodes: int=500, max_subexpr: int=250):
+def all_simplify(egg, ast, eqprovs=[], inner_max=5, max_nodes=500, max_subexpr=250):
 
     init_cost = egg.cost(ast)
 
@@ -150,7 +150,7 @@ def all_simplify(egg: EggModel, ast: Node, eqprovs: list[EqualityProvider]=[], i
     last_cost = egg.cost(ast)
     return init_cost, last_cost
 
-def test_oracle_equality(astA: Node, astB: Node, N=10, doAssert=False, debug=[]):
+def test_oracle_equality(astA, astB, N=10, doAssert=False, debug=[]):
     varsA = get_vars_from_ast(astA)
     varsB = get_vars_from_ast(astB)
     varsAB = set(varsA) | set(varsB)
@@ -167,5 +167,5 @@ def test_oracle_equality(astA: Node, astB: Node, N=10, doAssert=False, debug=[])
             if evalA != evalB: return False
     return True
     
-def assert_oracle_equality(astA: Node, astB: Node, N=10, debug=[]):
+def assert_oracle_equality(astA, astB, N=10, debug=[]):
     return test_oracle_equality(astA, astB, N=N, doAssert=True, debug=debug)

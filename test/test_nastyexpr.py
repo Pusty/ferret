@@ -30,12 +30,22 @@ simbaref = SiMBAEqualityProviderReference()
 boolmin = BooleanMinifierProvider()
 
 
+# cost 37
 egg = create_graph("basic")
 iter_simplify(egg, expr, [llp, mbabp, qsynth, simbaref, boolmin], 7, 50000)
 print("Node Size", egg.nodecount())
 expr_out = egg.extract(expr)
 print("Output Cost", ast_cost(expr_out))
 print(expr_out)
+
+
+
+#egg = create_graph("basic")
+#all_simplify(egg, expr_out, [llp, mbabp, qsynth, simbaref, boolmin])
+#print("Node Size", egg.nodecount())
+#expr_out2 = egg.extract(expr_out)
+#print("Output Cost", ast_cost(expr_out2))
+#print(expr_out2)
 
 #egg = create_graph("basic")
 # without increased node size (25000): 1529 (graph size: 73861)

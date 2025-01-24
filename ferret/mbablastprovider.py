@@ -1,5 +1,3 @@
-
-
 from .equalityprovider import EqualityProvider
 from .expressionast import *
 
@@ -174,7 +172,7 @@ class MBABlastEqualityProvider(EqualityProvider):
         return l
 
     
-    def simplify(self, ast: Node) -> tuple[bool, list[Node]]:
+    def simplify(self, ast):
         var_names = get_vars_from_ast(ast)
         var_amount = len(var_names)
 
@@ -288,9 +286,9 @@ class MBABlastEqualityProvider(EqualityProvider):
 
         return (True, [oexpr])
 
-    def failed(self, ast: Node):
+    def failed(self, ast):
         #print("Failed to apply MBA-Blast to", ast)
         pass
 
-    def name(self) -> str:
+    def name(self):
         return "MBABlastEqualityProvider"

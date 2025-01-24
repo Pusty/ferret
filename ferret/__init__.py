@@ -12,7 +12,7 @@ from .ferret import *
 
 
 # Fix equality bug in egglog.declarations.CallDecl
-def egglog_fixeq(self, other: object) -> bool:
+def egglog_fixeq(self, other):
     # Override eq to use cached hash for perf
     if not isinstance(other, egglog.declarations.CallDecl):
         return False

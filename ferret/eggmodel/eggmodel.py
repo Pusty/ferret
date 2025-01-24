@@ -1,34 +1,32 @@
 from ..expressionast import *
-from collections.abc import Iterator
-from typing import Tuple, List
 
 class EggModel():
 
-    def extract(self, ast:Node, include_cost:bool=False) -> Tuple[Node,bool] | Node:
+    def extract(self, ast, include_cost=False):
         raise NotImplementedError("Not implemented")
     
-    def run(self, rounds: int):
+    def run(self, rounds):
         raise NotImplementedError("Not implemented")
     
-    def register(self, ast: Node):
+    def register(self, ast):
         raise NotImplementedError("Not implemented")
     
-    def simplify(self, ast: Node) -> Tuple[Node, int]:
+    def simplify(self, ast):
         self.register(ast)
         self.run(1)
         return self.extract(ast, include_cost=True)
     
-    def union(self, astA: Node, astB: Node):
+    def union(self, astA, astB):
         raise NotImplementedError("Not implemented")
     
-    def cost(self, ast: Node) -> int:
+    def cost(self, ast):
         term, cost = self.extract(ast, include_cost=True)
         return cost
     
-    def nodecount(self) -> int:
+    def nodecount(self):
         raise NotImplementedError("Not implemented")
     
-    def extract_all_subexprs(self, root: Node, maxim: int) -> Iterator[Tuple[str, List]]:
+    def extract_all_subexprs(self, root, maxim):
         raise NotImplementedError("Not implemented")
 
     # save current graph as a display step

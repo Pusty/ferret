@@ -3,8 +3,6 @@ from ..expressionast import *
 from egglog.bindings import *
 import itertools
 import json
-from collections.abc import Iterator
-from typing import Tuple, List
 
 
 _rule_commands = None
@@ -61,10 +59,10 @@ def _get_bitvec_basic_rules():
 
 ; Normalisation invert
 ; no change observed?
-;(rewrite (BitVec___invert__ (BitVec___mul__ x y)) (BitVec___add__ (BitVec___mul__ (BitVec___invert__ x) y) (BitVec___sub__ y (BitVec___init__ 1))))
-;(rewrite (BitVec___invert__ (BitVec___add__ x y)) (BitVec___add__ (BitVec___invert__ x) (BitVec___add__ (BitVec___invert__ y) (BitVec___init__ 1))))
-;(rewrite (BitVec___invert__ (BitVec___sub__ x y)) (BitVec___sub__ (BitVec___invert__ x) (BitVec___add__ (BitVec___invert__ y) (BitVec___init__ 1))))
-;(rewrite (BitVec___invert__ (BitVec___xor__ x y)) (BitVec___or__ (BitVec___and__ x y) (BitVec___invert__ (BitVec___or__ x y))))
+(rewrite (BitVec___invert__ (BitVec___mul__ x y)) (BitVec___add__ (BitVec___mul__ (BitVec___invert__ x) y) (BitVec___sub__ y (BitVec___init__ 1))))
+(rewrite (BitVec___invert__ (BitVec___add__ x y)) (BitVec___add__ (BitVec___invert__ x) (BitVec___add__ (BitVec___invert__ y) (BitVec___init__ 1))))
+(rewrite (BitVec___invert__ (BitVec___sub__ x y)) (BitVec___sub__ (BitVec___invert__ x) (BitVec___add__ (BitVec___invert__ y) (BitVec___init__ 1))))
+(rewrite (BitVec___invert__ (BitVec___xor__ x y)) (BitVec___or__ (BitVec___and__ x y) (BitVec___invert__ (BitVec___or__ x y))))
 
 ; De Morgan
 (rewrite (BitVec___invert__ (BitVec___and__ x y)) (BitVec___or__ (BitVec___invert__ x) (BitVec___invert__ y)))
@@ -72,31 +70,31 @@ def _get_bitvec_basic_rules():
 
 ; Normalisation negate
 ; no observed change?
-;(rewrite (BitVec___neg__ (BitVec___mul__ x y)) (BitVec___mul__ (BitVec___neg__ x) y))
-;(rewrite (BitVec___neg__ (BitVec___mul__ x y)) (BitVec___mul__ x (BitVec___neg__ y)))
+(rewrite (BitVec___neg__ (BitVec___mul__ x y)) (BitVec___mul__ (BitVec___neg__ x) y))
+(rewrite (BitVec___neg__ (BitVec___mul__ x y)) (BitVec___mul__ x (BitVec___neg__ y)))
 
 ; Equalities
 ; seems useful
-;(rewrite (BitVec___neg__ x) (BitVec___add__ (BitVec___invert__ x) (BitVec___init__ 1)))
-;(rewrite (BitVec___add__ (BitVec___invert__ x) (BitVec___init__ 1)) (BitVec___neg__ x))
-;(rewrite (BitVec___add__ x (BitVec___neg__ y)) (BitVec___sub__ x y))
+(rewrite (BitVec___neg__ x) (BitVec___add__ (BitVec___invert__ x) (BitVec___init__ 1)))
+(rewrite (BitVec___add__ (BitVec___invert__ x) (BitVec___init__ 1)) (BitVec___neg__ x))
+(rewrite (BitVec___add__ x (BitVec___neg__ y)) (BitVec___sub__ x y))
 ; this rule increases blowup massively
-;(rewrite (BitVec___sub__ x y) (BitVec___add__ x (BitVec___neg__ y)))
+(rewrite (BitVec___sub__ x y) (BitVec___add__ x (BitVec___neg__ y)))
 
 ; Inverse distributivity
 ; seems useful
-;(rewrite (BitVec___add__ (BitVec___mul__ x y) (BitVec___mul__ x z)) (BitVec___mul__ x (BitVec___add__ y z)))
-;(rewrite (BitVec___sub__ (BitVec___mul__ x y) (BitVec___mul__ x z)) (BitVec___mul__ x (BitVec___sub__ y z)))
+(rewrite (BitVec___add__ (BitVec___mul__ x y) (BitVec___mul__ x z)) (BitVec___mul__ x (BitVec___add__ y z)))
+(rewrite (BitVec___sub__ (BitVec___mul__ x y) (BitVec___mul__ x z)) (BitVec___mul__ x (BitVec___sub__ y z)))
 
 ; Collapsing
 ; no observed change?
-;(rewrite (BitVec___add__ (BitVec___mul__ x y) y) (BitVec___mul__ (BitVec___add__ x (BitVec___init__ 1)) y))
-;(rewrite (BitVec___add__ x x) (BitVec___mul__ (BitVec___init__ 2) x))
-;(rewrite (BitVec___or__ (BitVec___xor__ x y) y) (BitVec___or__ x y))
+(rewrite (BitVec___add__ (BitVec___mul__ x y) y) (BitVec___mul__ (BitVec___add__ x (BitVec___init__ 1)) y))
+(rewrite (BitVec___add__ x x) (BitVec___mul__ (BitVec___init__ 2) x))
+(rewrite (BitVec___or__ (BitVec___xor__ x y) y) (BitVec___or__ x y))
 
 ; Swapping
 ; no observed change?
-;(rewrite (BitVec___mul__ x (BitVec___neg__ y)) (BitVec___neg__ (BitVec___mul__ x y)))
+(rewrite (BitVec___mul__ x (BitVec___neg__ y)) (BitVec___neg__ (BitVec___mul__ x y)))
 
 ; Distributivity
 (rewrite (BitVec___mul__ (BitVec___add__ x y) z) (BitVec___add__ (BitVec___mul__ x z) (BitVec___mul__ y z)))
@@ -104,13 +102,13 @@ def _get_bitvec_basic_rules():
 
 ; Additional rules
 ; no observed change?
-;(rewrite (BitVec___neg__ (BitVec___add__ x y)) (BitVec___add__ (BitVec___neg__ x) (BitVec___neg__ y)))
-;(rewrite (BitVec___lshift__ (BitVec___and__ x y) z) (BitVec___and__ (BitVec___lshift__ x z) (BitVec___lshift__ y z)))
-;(rewrite (BitVec___lshift__ (BitVec___rshift__ x z) z) (BitVec___and__ x (BitVec___invert__ (BitVec___sub__ (BitVec___lshift__ (BitVec___init__ 1) z) (BitVec___init__ 1)))))
-;(rewrite (BitVec___sub__ y (BitVec___and__ (BitVec___invert__ x) y)) (BitVec___and__ x y))
-;(rewrite (BitVec___add__ (BitVec___lshift__ x z) (BitVec___lshift__ y z)) (BitVec___lshift__ (BitVec___add__ x y) z))
-;(rewrite (BitVec___lshift__ (BitVec___lshift__ x y) z) (BitVec___lshift__ (BitVec___lshift__ x z) y))
-;(rewrite (BitVec___sub__ (BitVec___or__ x y) (BitVec___and__ (BitVec___invert__ x) y)) x)
+(rewrite (BitVec___neg__ (BitVec___add__ x y)) (BitVec___add__ (BitVec___neg__ x) (BitVec___neg__ y)))
+(rewrite (BitVec___lshift__ (BitVec___and__ x y) z) (BitVec___and__ (BitVec___lshift__ x z) (BitVec___lshift__ y z)))
+(rewrite (BitVec___lshift__ (BitVec___rshift__ x z) z) (BitVec___and__ x (BitVec___invert__ (BitVec___sub__ (BitVec___lshift__ (BitVec___init__ 1) z) (BitVec___init__ 1)))))
+(rewrite (BitVec___sub__ y (BitVec___and__ (BitVec___invert__ x) y)) (BitVec___and__ x y))
+(rewrite (BitVec___add__ (BitVec___lshift__ x z) (BitVec___lshift__ y z)) (BitVec___lshift__ (BitVec___add__ x y) z))
+(rewrite (BitVec___lshift__ (BitVec___lshift__ x y) z) (BitVec___lshift__ (BitVec___lshift__ x z) y))
+(rewrite (BitVec___sub__ (BitVec___or__ x y) (BitVec___and__ (BitVec___invert__ x) y)) x)
 
 ; Trivial identities
 
@@ -128,10 +126,10 @@ def _get_bitvec_basic_rules():
 (rewrite (BitVec___rshift__ x (BitVec___init__ 0)) x)
 (rewrite (BitVec___lshift__ x (BitVec___init__ 0)) x)
 
-;(rewrite (BitVec___invert__ (BitVec___neg__ x)) (BitVec___sub__ x (BitVec___init__ 1)))
+(rewrite (BitVec___invert__ (BitVec___neg__ x)) (BitVec___sub__ x (BitVec___init__ 1)))
 
 ; seems unhelpful?
-;(rewrite (BitVec___neg__ (BitVec___invert__ x)) (BitVec___add__ x (BitVec___init__ 1)))
+(rewrite (BitVec___neg__ (BitVec___invert__ x)) (BitVec___add__ x (BitVec___init__ 1)))
 
 ;  Null terms
 (rewrite (BitVec___and__ x (BitVec___init__ 0)) (BitVec___init__ 0))
@@ -187,7 +185,7 @@ class EggBasic(EggModel):
         else:
             assert False
 
-    def _ast_to_egg_str(self, ast: Node):
+    def _ast_to_egg_str(self, ast):
         r = map_ast(ast, 
             lambda var: '(BitVec_var "'+str(var)+'")',
             lambda const: "(BitVec___init__ "+str(const)+")", {
@@ -204,7 +202,7 @@ class EggBasic(EggModel):
         })
         return r
     
-    def _ast_to_egg(self, ast: Node):
+    def _ast_to_egg(self, ast):
         return map_ast(ast, 
             lambda var: Call(DUMMY_SPAN, "BitVec_var", [Lit(DUMMY_SPAN, String(str(var)))]) ,
             lambda const: Call(DUMMY_SPAN, "BitVec___init__", [Lit(DUMMY_SPAN, Int(const))]), 
@@ -221,7 +219,7 @@ class EggBasic(EggModel):
             CallType.NEG: lambda a: Call(DUMMY_SPAN, "BitVec___neg__", [a])
         })
 
-    def extract(self, ast:Node, include_cost:bool=False) -> Tuple[Node,bool] | Node:
+    def extract(self, ast, include_cost=False):
         #extract_cmd = "(extract "+self._ast_to_egg_str(ast)+" 0)"
         #self.egraph.run_program(*parse_program(extract_cmd))
         self.egraph.run_program(ActionCommand(Extract(DUMMY_SPAN, self._ast_to_egg(ast), Lit(DUMMY_SPAN, Int(0)))))
@@ -234,21 +232,21 @@ class EggBasic(EggModel):
         else:
             return term
 
-    def run(self, rounds: int):
+    def run(self, rounds):
         #self.egraph.run_program(*parse_program("(run-schedule (repeat "+str(rounds)+" (run)))"))
         self.egraph.run_program(RunSchedule(Sequence(DUMMY_SPAN, [Repeat(DUMMY_SPAN, rounds, Sequence(DUMMY_SPAN, [Run(DUMMY_SPAN, RunConfig('', None))]))])))
     
-    def register(self, ast: Node):
+    def register(self, ast):
         #self.egraph.run_program(*parse_program(self._ast_to_egg_str(ast)))
         self.egraph.run_program(ActionCommand(Expr_(DUMMY_SPAN, self._ast_to_egg(ast))))
 
-    def union(self, astA: Node, astB: Node):
+    def union(self, astA, astB):
         #self.egraph.run_program(*parse_program("(union "+self._ast_to_egg_str(astA)+" "+self._ast_to_egg_str(astB)+")"))
         self.egraph.run_program(ActionCommand(Union(DUMMY_SPAN, self._ast_to_egg(astA), self._ast_to_egg(astB))))
 
     
     
-    def nodecount(self) -> int:
+    def nodecount(self):
         pjson = self.egraph.serialize([],
                     max_functions=None,
                     max_calls_per_function=None,
@@ -274,7 +272,7 @@ class EggBasic(EggModel):
                 # yield for one layer up in recursion
                 yield r
 
-    def json_to_ast(self, subexpr: Tuple[str, List] | Node) -> Node:
+    def json_to_ast(self, subexpr):
         if isinstance(subexpr, Node): return subexpr
         elif isinstance(subexpr, int): return subexpr
         elif isinstance(subexpr, str): return subexpr
@@ -312,7 +310,7 @@ class EggBasic(EggModel):
         else:
             raise Exception("Invalid function", f)
 
-    def extract_all_subexprs(self, rootExpr: Node, maxim:int=-1) -> Iterator[Tuple[str, List]]:
+    def extract_all_subexprs(self, rootExpr, maxim=-1):
             _root = self._ast_to_egg(rootExpr)
 
             json_egraph = self.egraph.serialize([_root],

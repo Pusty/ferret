@@ -31,10 +31,10 @@ class SiMBAEqualityProviderReference(EqualityProvider):
         #print("Failed to apply SiMBA Reference to ", expr)
         pass
 
-    def name(self) -> str:
+    def name(self):
         return "SiMBAEqualityProviderReference"
     
-    def simplify(self, oast: Node) -> tuple[bool, list[Node]]:
+    def simplify(self, oast):
         from simplify import simplify_linear_mba
 
         # hack as SiMBA exits with message

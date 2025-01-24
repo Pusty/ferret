@@ -2,11 +2,11 @@ from egglog import Expr
 from .expressionast import *
 
 class EqualityProvider():
-    def simplify(self, ast: Node) -> tuple[bool, list[Node]]:
+    def simplify(self, ast):
         raise NotImplementedError("Not implemented")
     
-    def failed(self, ast: Node):
+    def failed(self, ast):
         raise NotImplementedError("Failed to apply to "+str(ast))
     
-    def name(self) -> str:
+    def name(self):
         raise NotImplementedError("Not implemented")

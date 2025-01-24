@@ -3,8 +3,6 @@ from ..expressionast import *
 from egglog.bindings import *
 import itertools
 import json
-from collections.abc import Iterator
-from typing import Tuple, List
 
 
 
@@ -435,7 +433,7 @@ class EggMultiset(EggModel):
         else:
             assert False
 
-    def _ast_to_egg_str(self, ast: Node):
+    def _ast_to_egg_str(self, ast):
         return map_ast(ast, 
             lambda var: '(BitVec_var "'+str(var)+'")',
             lambda const: "(BitVec___init__ "+str(const)+")", {
@@ -451,7 +449,7 @@ class EggMultiset(EggModel):
             CallType.NEG: lambda a: "(BitVec___neg__ "+a+")"
             })
     
-    def _ast_to_egg(self, ast: Node):
+    def _ast_to_egg(self, ast):
         return map_ast(ast, 
         lambda var: Call(DUMMY_SPAN, "BitVec_var", [Lit(DUMMY_SPAN, String(str(var)))]) ,
         lambda const: Call(DUMMY_SPAN, "BitVec___init__", [Lit(DUMMY_SPAN, Int(const))]), 
@@ -469,7 +467,7 @@ class EggMultiset(EggModel):
         CallType.NEG: lambda a: Call(DUMMY_SPAN, "BitVec___neg__", [a])
     })
 
-    def extract(self, ast:Node, include_cost:bool=False) -> Tuple[Node,bool] | Node:
+    def extract(self, ast, include_cost=False):
         #return ast
         if ast not in self.let_cache:
             #extract_cmd = "(extract "+self._ast_to_egg_str(ast)+" 0)"
@@ -487,11 +485,11 @@ class EggMultiset(EggModel):
         else:
             return term
 
-    def run(self, rounds: int):
+    def run(self, rounds):
         #self.egraph.run_program(*parse_program("(run-schedule (repeat "+str(rounds)+" (run)))"))
         self.egraph.run_program(RunSchedule(Sequence(DUMMY_SPAN, [Repeat(DUMMY_SPAN, rounds, Sequence(DUMMY_SPAN, [Run(DUMMY_SPAN, RunConfig('', None))]))])))
     
-    def register(self, ast: Node):
+    def register(self, ast):
 
         if ast not in self.let_cache:
             letStr = "sol_"+str(self.let_index)
@@ -504,7 +502,7 @@ class EggMultiset(EggModel):
         #self.egraph.run_program(*parse_program(self._ast_to_egg_str(ast)))
         self.egraph.run_program(ActionCommand(Expr_(DUMMY_SPAN, self._ast_to_egg(ast))))
 
-    def union(self, astA: Node, astB: Node):
+    def union(self, astA, astB):
 
         if astA in self.let_cache:
             pastA = Var(DUMMY_SPAN, self.let_cache[astA])
@@ -522,7 +520,7 @@ class EggMultiset(EggModel):
         self.egraph.run_program(ActionCommand(Union(DUMMY_SPAN, pastA, pastB)))
     
     
-    def nodecount(self) -> int:
+    def nodecount(self):
         pjson = self.egraph.serialize([],
                     max_functions=None,
                     max_calls_per_function=None,
@@ -549,7 +547,7 @@ class EggMultiset(EggModel):
                 # yield for one layer up in recursion
                 yield r
 
-    def json_to_ast(self, subexpr: Tuple[str, List] | Node) -> Node:
+    def json_to_ast(self, subexpr):
         if isinstance(subexpr, Node): return subexpr
         elif isinstance(subexpr, int): return subexpr
         elif isinstance(subexpr, str): return subexpr
@@ -621,7 +619,7 @@ class EggMultiset(EggModel):
         else:
             raise Exception("Invalid function", f)
 
-    def extract_all_subexprs(self, rootExpr: Node, maxim:int=-1) -> Iterator[Tuple[str, List]]:
+    def extract_all_subexprs(self, rootExpr, maxim=-1):
             
             if rootExpr in self.let_cache:
                 _root = Var(DUMMY_SPAN, self.let_cache[rootExpr])

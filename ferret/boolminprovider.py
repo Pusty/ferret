@@ -3,7 +3,7 @@
 import pyeda
 from pyeda.inter import exprvar, expr2truthtable, espresso_tts
 
-from sympy import groebner, GF, symbols, prod, Mul, Add, Pow, Poly, Symbol
+from sympy import groebner, GF, symbols, prod, Mul, Add, Pow, Poly, Symbol, factor_list
 from sympy.logic.boolalg import to_dnf, Not, And, Or, Xor, BooleanTrue, BooleanFalse, simplify_logic
 
 
@@ -88,7 +88,7 @@ def alg_decode(f_a, x):
     return simplify_logic(Or(*[alg_decode_term(term) for term in f_a]))
     
 
-def minimize(formula, x, depthLeft=0):
+def minimize(formula, x, depthLeft=5, negate=False):
     ideal = alg_encode(formula, x)
     G = groebner(ideal, x, domain=GF(2), order='lex')
     output = []
@@ -100,17 +100,27 @@ def minimize(formula, x, depthLeft=0):
             trivial = trivial or (g == x[i]*x[i] + x[i])
         if trivial: continue
         
-        # Check linearity
-        p = Poly(g, x, domain=GF(2))
-        if p.is_linear or depthLeft <= 0:
-            output.append(alg_decode_term(g))
+        factors = []
+        
+        for factor, _ in factor_list(g)[1]:
+            p = Poly(factor, x, domain=GF(2))
+            if p.is_linear or depthLeft <= 0:
+                if negate:
+                    factors.append(Not(alg_decode_term(factor)))
+                else:
+                    factors.append(alg_decode_term(factor))
+            else:
+                dec = alg_decode_term(factor+1)
+                mini = minimize(dec, x, depthLeft-1, not negate)
+                output.append(mini)
+        if negate:
+            output.append(Or(*factors))
         else:
-            # Iterate recursively for non-trivial non-linear elements
-            dec = alg_decode_term(g)
-            mini = minimize(Not(dec), x, depthLeft-1)
-            output.append(Not(mini))
-
-    return simplify_logic(Or(*output))
+            output.append(And(*factors))
+    if negate:
+        return And(*output)
+    else:
+        return Or(*output)
     
     
 from .expressionast import *
@@ -155,10 +165,7 @@ class BooleanMinifierProvider(EqualityProvider):
     def __init__(self):
         pass
 
-
-
-
-    def simplify(self, ast: Node) -> tuple[bool, list[Node]]:
+    def simplify(self, ast):
 
         is_boolean = map_ast(ast, lambda x: True, lambda y: y == 0 or y == -1, {
         CallType.ADD: lambda a, b: False,
@@ -186,12 +193,12 @@ class BooleanMinifierProvider(EqualityProvider):
         CallType.NOT: lambda a: ~a,
         })
 
-        sympyMin = minimize(sympyTerm, [sympyVars[v] for v in sympyVars])
+        sympyMin = simplify_logic(minimize(sympyTerm, [sympyVars[v] for v in sympyVars]))
 
         return (True, [_sympy_to_ast(sympyMin)])
 
-    def failed(self, ast: Node):
+    def failed(self, ast):
         pass
 
-    def name(self) -> str:
+    def name(self):
         return "BooleanMinifierProvider"

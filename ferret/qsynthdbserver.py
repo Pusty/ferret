@@ -1,6 +1,4 @@
-
-import plyvel
-import json
+from .qsynthdb import QSynthDB
 import os
 import time
 
@@ -12,38 +10,28 @@ QSYNTHDBSERVER_PORT = 50000
 QSYNTHDBSERVER_AUTHKEY=b'qsynthdbser'
 
 
-META_KEY = b"metadatas"
-VARS_KEY = b"variables"
-INPUTS_KEY = b"inputs"
-SIZE_KEY = b"size"
 
 PROJECT_PATH = os.getcwd()
-TABLE_PATH = os.path.join(PROJECT_PATH,"qsynth_table", "msynth_oracle")
+TABLE_PATH = os.path.join(PROJECT_PATH,"qsynth_table")
 
 
 
 class QSynthDBServer():
-    def __init__(self):
-        self.table = plyvel.DB(TABLE_PATH)
-        self.metas = json.loads(self.table.get(META_KEY))
-        self.vrs = list(json.loads(self.table.get(VARS_KEY)).items())
-        self.inps = json.loads(self.table.get(INPUTS_KEY))
+    def __init__(self, path=os.path.join(TABLE_PATH, "msynth_oracle.db")):
+        self.db = QSynthDB(path)
 
 class QSynthDBServerConnection:
     def __init__(self):
         pass
     def vrs(self):
         global db
-        return db.vrs
+        return db.db.vrs
     def inps(self):
         global db
-        return db.inps
-    def metas(self):
-        global db
-        return db.metas
+        return db.db.inps
     def get(self, key):
         global db
-        return db.table.get(key)
+        return db.db.table.get(key)
     
 QSynthDBServerConnectionProxy = MakeProxyType("QSynthDBServerConnection", public_methods(QSynthDBServerConnection))
 BaseManager.register("QSynthDBServerConnection", QSynthDBServerConnection, QSynthDBServerConnectionProxy)
@@ -72,8 +60,8 @@ def connectQSynthProvider(provider):
     manager = BaseManager(address=('', QSYNTHDBSERVER_PORT), authkey=QSYNTHDBSERVER_AUTHKEY)
     manager.connect()
     connection = manager.QSynthDBServerConnection()
-    provider.metas = connection.metas()
-    provider.vrs = connection.vrs()
-    provider.inps = connection.inps()
-    provider.table = connection
+
+    provider.db.vrs = connection.vrs()
+    provider.db.inps = connection.inps()
+    provider.db.table = connection
 
