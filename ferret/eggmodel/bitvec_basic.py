@@ -273,9 +273,9 @@ class EggBasic(EggModel):
                 yield r
 
     def _traverse_egraph_nodes_best(self, nodes, cur, eclasses, nodeclass, seen, best):
+        if cur in best:
+            yield best[cur][1]
         if cur in seen: 
-            if cur in best: 
-                yield best[cur][1]
             return
         # don't calculate best node for eclass twice
         seen.add(cur)
@@ -369,10 +369,11 @@ class EggBasic(EggModel):
                 for r in self._traverse_egraph_nodes_best(json_egraph["nodes"], root, eclasses, nodeclass, seen, best_per_class):
                     pass
                 # check eclasses not covered
-                for eclass in eclasses:
-                    if eclass not in seen:
-                        for r in self._traverse_egraph_nodes_best(json_egraph["nodes"], eclass, eclasses, nodeclass, seen, best_per_class):
-                            pass
+                #seen = set()
+                #for eclass in eclasses:
+                #    if eclass not in best_per_class:
+                #        for r in self._traverse_egraph_nodes_best(json_egraph["nodes"], eclass, eclasses, nodeclass, seen, best_per_class):
+                #            pass
                 for key in best_per_class:
                     cost, expr = best_per_class[key]
                     subexprs.add(expr)

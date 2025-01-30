@@ -182,7 +182,7 @@ class EggMultiset(EggModel):
         commands = parse_program("""              
         ; newer versio needs  constructor here
         ; (constructor tmp-invert-fn (BitVec) BitVec) 
-        (function tmp-invert-fn (BitVec) BitVec)
+        (function tmp-invert-fn (BitVec) BitVec :unextractable)
 
         (rule ((= tmp (tmp-invert-fn x)))
             ((union tmp (BitVec___invert__ x))
@@ -214,7 +214,7 @@ class EggMultiset(EggModel):
         # Distributivity
         commands = parse_program("""
         ; newer version needs ":no-merge" here
-        (function tmp-distributivity-fn (BitVecMultiSet BitVec) BitVec)           
+        (function tmp-distributivity-fn (BitVecMultiSet BitVec) BitVec :unextractable)           
         (rule ((= tmp (tmp-distributivity-fn xs x)))
             ((union tmp (BitVecSet__mul__ (multiset-insert xs x)))
             (delete (tmp-distributivity-fn xs x)))
@@ -548,9 +548,9 @@ class EggMultiset(EggModel):
                 yield r
 
     def _traverse_egraph_nodes_best(self, nodes, cur, eclasses, nodeclass, seen, best):
+        if cur in best:
+            yield best[cur][1]
         if cur in seen: 
-            if cur in best: 
-                yield best[cur][1]
             return
         # don't calculate best node for eclass twice
         seen.add(cur)
@@ -681,10 +681,11 @@ class EggMultiset(EggModel):
                 for r in self._traverse_egraph_nodes_best(json_egraph["nodes"], root, eclasses, nodeclass, seen, best_per_class):
                     pass
                 # check eclasses not covered
-                for eclass in eclasses:
-                    if eclass not in seen:
-                        for r in self._traverse_egraph_nodes_best(json_egraph["nodes"], eclass, eclasses, nodeclass, seen, best_per_class):
-                            pass
+                #seen = set()
+                #for eclass in eclasses:
+                #    if eclass not in best_per_class:
+                #        for r in self._traverse_egraph_nodes_best(json_egraph["nodes"], eclass, eclasses, nodeclass, seen, best_per_class):
+                #            pass
                 for key in best_per_class:
                     cost, expr = best_per_class[key]
                     subexprs.add(expr)
