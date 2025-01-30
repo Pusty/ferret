@@ -26,7 +26,7 @@ class EggModel():
     def nodecount(self):
         raise NotImplementedError("Not implemented")
     
-    def extract_all_subexprs(self, root, maxim):
+    def extract_all_subexprs(self, root, maxim, best=False):
         raise NotImplementedError("Not implemented")
 
     # save current graph as a display step

@@ -28,42 +28,77 @@ def apply_eqprov(egg, eqprov, ast):
         eqprov.failed(ast)
 
 
+def _process_subexpr_for_merge(subexpr, inpMappings, classes, newly_created):
+    outs = []
+    vars = get_vars_from_ast(subexpr)
+
+    # run the expression against randomized inputs
+    for inpMappingIndex in range(len(inpMappings)):
+        mapping = inpMappings[inpMappingIndex]
+        for var in vars:
+            if var not in mapping:
+                mapping[var] = random.randint(0, 0xffffffffffffffff)
+        outs.append(eval_ast(subexpr, mapping)&0xffffffffffffffff)
+    
+    # hash the outputs as a eclass key and add it
+    h = hashlib.md5(array.array('Q', outs).tobytes()).digest()
+    if h not in classes:
+        classes[h] = []
+    classes[h].append((subexpr, newly_created))
+
+
 # Merge subexpressions of a graph (given a root expression) by their output behavior
 # Verify correctness using SMT Solver
 def merge_by_output(egg, root):
     classes = {}
+    bestSubexprs = []
     inpMappings = [{} for i in range(5)]
 
     # Extract subexpressions
-    for subexpr in egg.extract_all_subexprs(root, 100000):
+    for subexpr in egg.extract_all_subexprs(root, 100000, best=True):
         subexpr = egg.json_to_ast(subexpr) # convert them (this is computation heavy at scale)
-        outs = []
-        vars = get_vars_from_ast(subexpr)
+        bestSubexprs.append(subexpr)
+        _process_subexpr_for_merge(subexpr, inpMappings, classes, False)
 
-        # run the expression against randomized inputs
-        for inpMappingIndex in range(len(inpMappings)):
-            mapping = inpMappings[inpMappingIndex]
-            for var in vars:
-                if var not in mapping:
-                    mapping[var] = random.randint(0, 0xffffffffffffffff)
-            outs.append(eval_ast(subexpr, mapping)&0xffffffffffffffff)
+    for a in bestSubexprs:
+        for b in bestSubexprs:
+
+            if isinstance(b, I64Node):
+                _process_subexpr_for_merge(I64Node(-b.value), inpMappings, classes, True)
+                _process_subexpr_for_merge(I64Node(~b.value), inpMappings, classes, True)
+            else:
+                _process_subexpr_for_merge(CallNode(CallType.NOT, [b]), inpMappings, classes, True)
+                _process_subexpr_for_merge(CallNode(CallType.NEG, [b]), inpMappings, classes, True)
+
+            if isinstance(a, I64Node) and isinstance(b, I64Node):
+                _process_subexpr_for_merge(I64Node(a.value+b.value), inpMappings, classes, True)
+                _process_subexpr_for_merge(I64Node(a.value-b.value), inpMappings, classes, True)
+                _process_subexpr_for_merge(I64Node(a.value*b.value), inpMappings, classes, True)
+                _process_subexpr_for_merge(I64Node(a.value&b.value), inpMappings, classes, True)
+                _process_subexpr_for_merge(I64Node(a.value|b.value), inpMappings, classes, True)
+                _process_subexpr_for_merge(I64Node(a.value^b.value), inpMappings, classes, True)
+            else:
+                for callType in [CallType.ADD, CallType.SUB, CallType.MUL, CallType.AND, CallType.OR, CallType.XOR]:
+                    _process_subexpr_for_merge(CallNode(callType, [a, b]), inpMappings, classes, True)
         
-        # hash the outputs as a eclass key and add it
-        h = hashlib.md5(array.array('Q', outs).tobytes()).digest()
-        if h not in classes:
-            classes[h] = []
-        classes[h].append(subexpr)
-    
+        if isinstance(a, I64Node):
+                _process_subexpr_for_merge(I64Node(-a.value), inpMappings, classes, True)
+                _process_subexpr_for_merge(I64Node(~a.value), inpMappings, classes, True)
+        else:
+                _process_subexpr_for_merge(CallNode(CallType.NEG, [a]), inpMappings, classes, True)
+                _process_subexpr_for_merge(CallNode(CallType.NOT, [a]), inpMappings, classes, True)
     # Go through all classes and union them if applicable
     for key in classes:
         # skip unique classes
         if len(classes[key]) == 1: continue
-        cost_array = [(ast_cost(v), v) for v in classes[key]]
+        cost_array = [(ast_cost(v[0]), v) for v in classes[key]]
         cost_array.sort(key=lambda x: x[0])
         # union with minimal element
-        min_element = cost_array[0][1]
+        min_element = cost_array[0][1][0]
         for i in range(1, len(cost_array)):
-            astB = cost_array[i][1]
+            astB = cost_array[i][1][0]
+            if cost_array[i][1][1]: 
+                continue # skip newly created if it's not smallest
             # verify using SMT solver that things are equal (or at least check there isn't obvious counter example)
             if verify_ast(min_element, astB, {"timeout": 100, "unsafe": True, "precision": 64}):
                 egg.union(min_element, astB)

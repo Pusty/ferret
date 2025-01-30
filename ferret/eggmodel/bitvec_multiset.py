@@ -547,6 +547,33 @@ class EggMultiset(EggModel):
                 # yield for one layer up in recursion
                 yield r
 
+    def _traverse_egraph_nodes_best(self, nodes, cur, eclasses, nodeclass, seen, best):
+        if cur in seen: 
+            if cur in best: 
+                yield best[cur][1]
+            return
+        # don't calculate best node for eclass twice
+        seen.add(cur)
+        # for every node in this equivalence class
+        for node in eclasses[cur]:
+            # all products of child equivalent classes
+            for args in itertools.product(*[self._traverse_egraph_nodes_best(nodes, nodeclass[child], eclasses, nodeclass, seen, best) for child in nodes[node]["children"]]):
+                r = (nodes[node]["op"], args)
+                if r[0] == "tmp-invert-fn" or r[0] == "tmp-distributivity-fn": continue
+                if cur in best:
+                    cur_best = best[cur][0]
+                else:
+                    cur_best = 0xffffffffffffffff
+                if r[0][0] == "B": 
+                    cost = ast_cost(self.json_to_ast(r))
+                else: 
+                    cost = 0
+                if cur_best > cost:
+                    best[cur] = (cost, r)
+        if cur in best:
+            yield best[cur][1]
+        return
+
     def json_to_ast(self, subexpr):
         if isinstance(subexpr, Node): return subexpr
         elif isinstance(subexpr, int): return subexpr
@@ -619,7 +646,7 @@ class EggMultiset(EggModel):
         else:
             raise Exception("Invalid function", f)
 
-    def extract_all_subexprs(self, rootExpr, maxim=-1):
+    def extract_all_subexprs(self, rootExpr, maxim=-1, best=False):
             
             if rootExpr in self.let_cache:
                 _root = Var(DUMMY_SPAN, self.let_cache[rootExpr])
@@ -647,8 +674,24 @@ class EggMultiset(EggModel):
             
             subexprs = set()
             # fill the subexprs set
-            for r in self._traverse_egraph_nodes(json_egraph["nodes"], root, eclasses,nodeclass, set(), subexprs, maxim):
-                pass
+            if best:
+                best_per_class = {}
+                seen = set()
+                # start by root
+                for r in self._traverse_egraph_nodes_best(json_egraph["nodes"], root, eclasses, nodeclass, seen, best_per_class):
+                    pass
+                # check eclasses not covered
+                for eclass in eclasses:
+                    if eclass not in seen:
+                        for r in self._traverse_egraph_nodes_best(json_egraph["nodes"], eclass, eclasses, nodeclass, seen, best_per_class):
+                            pass
+                for key in best_per_class:
+                    cost, expr = best_per_class[key]
+                    subexprs.add(expr)
+            else:
+                for r in self._traverse_egraph_nodes(json_egraph["nodes"], root, eclasses,nodeclass, set(), subexprs, maxim):
+                    pass
+
 
             for r in subexprs:
                 # skip raw numbers and var names
