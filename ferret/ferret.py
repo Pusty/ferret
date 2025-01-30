@@ -43,11 +43,16 @@ def _process_subexpr_for_merge(subexpr, inpMappings, classes, classesMin, newly_
     # hash the outputs as a eclass key and add it
     h = hashlib.md5(array.array('Q', outs).tobytes()).digest()
     cost = ast_cost(subexpr)
-    if h not in classes:
-        classes[h] = set()
-    elif newly_created and h in classesMin: # if newly_created only add if smaller than existing
+    
+    # if newly_created only add if smaller than existing minimum
+    if newly_created and h in classesMin: 
         if classesMin[h][0] <= cost: return
-    classes[h].add((subexpr, newly_created))
+
+    if not newly_created: # newly created are only relevant if they are the minimal element in the class
+        if h not in classes:
+            classes[h] = set()
+        classes[h].add(subexpr)
+
     if h in classesMin:
         if classesMin[h][0] > cost:
             classesMin[h] = (cost, subexpr)
@@ -100,14 +105,12 @@ def merge_by_output(egg, root, enrich=False):
     # Go through all classes and union them if applicable
     for key in classes:
         # skip unique classes
-        if len(classes[key]) == 1: continue
+        if len(classes[key]) == 1 and classesMin[key][1] == next(iter(classes[key])): continue
         # union with minimal element
         min_element = classesMin[key][1]
-        for astB, newlyCreated in classes[key]:
+        for astB in classes[key]:
             if astB == min_element:
                 continue # skip minimal to minimal merge
-            if newlyCreated: 
-                continue # skip newly created if it's not smallest
             # verify using SMT solver that things are equal (or at least check there isn't obvious counter example)
             if verify_ast(min_element, astB, {"timeout": 100, "unsafe": True, "precision": 64}):
                 egg.union(min_element, astB)
