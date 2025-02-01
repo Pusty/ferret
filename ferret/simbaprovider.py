@@ -255,7 +255,7 @@ class SiMBAEqualityProvider(EqualityProvider):
                 return True
             
         if non_linear and not verify_ast(original, r, {"timeout": 100, "unsafe": True, "precision": 64}): 
-            return False
+            return True
         
         options.append((ast_cost(r), r))
         return True
@@ -279,5 +279,8 @@ class SiMBAEqualityProvider(EqualityProvider):
             
         options.sort(key=lambda x: x[0])
         res = options[0][1]
+
+        if res == oast:
+            return (False, [])
 
         return (True, [res])
