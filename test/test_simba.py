@@ -1,17 +1,16 @@
 from ferret import *
 
 
-from .MBABlast_dataset import *
+#from .MBABlast_dataset import *
+from .MBASolver_dataset import *
+#from .MBAObfuscator_dataset import *
 
 
 print("SiMBA Tests:")
 
 
 
-
-dataset_name, dataset, dataset_groundtruth = parseDataset(100)[0]
-
-#dataset = [((BitVec.var("x") & BitVec.var("y")) - (BitVec.var("y") + BitVec.var("x"))) * 11 ]
+dataset_name, dataset, dataset_groundtruth = parseDataset(1000)[0]
 
 
 def eval_provider(prov):
@@ -29,7 +28,7 @@ def eval_provider(prov):
 
         if not success:
             print("Failed to simplify ", expr)
-            exit(1)
+            continue
 
         sexpr = sexprs[0]
 
@@ -56,9 +55,26 @@ def eval_provider(prov):
     print("Ground Cost", groundtruth_accum)
     print("Start Cost", start_value_accum)
     print("End Cost", end_value_accum)
-    print("Simplification to", (end_value_accum/start_value_accum)*100, "%")
-    print("Groundtruth would be ", (groundtruth_accum/start_value_accum)*100, "%")
+    if start_value_accum != 0:
+        print("Simplification to", (end_value_accum/start_value_accum)*100, "%")
+        print("Groundtruth would be ", (groundtruth_accum/start_value_accum)*100, "%")
 
 
-sprov  = SiMBAEqualityProviderReference()
+
+sprovr  = SiMBAEqualityProviderReference()
+eval_provider(sprovr)
+
+sprov  = SiMBAEqualityProvider()
 eval_provider(sprov)
+
+
+#x = VarNode("x")
+#y = VarNode("y")
+#z = VarNode("z")
+#t = VarNode("t")
+
+#print(sprov.simplify(2*~(x|~y) - (x^y) + 2*x))
+#expr = 13664254869414482676*((~(x^y)&~t)|(~(x|(y|z))&t)) + 6832127434707241344*((~(y^z)&~t)|((~z&(x^y))&t)) + 15713893099826655077*(((z^~(x|(y&z)))&~t)|(~(~x|(~y|z))&t)) + 10248191152060862011*((~(x^(y&z))&~t)|(((x^y)&~(x^z))&t)) + 3416063717353620669*(((z&(x|y))&~t)|((y^(x|z))&t)) + 10248191152060862013*(((z^~(x|(~y&z)))&~t)|((y^(~x|(~y|z)))&t)) + 1366425486941448269*((~(x&(y&z))&~t)|((x^z)&t)) + 4099276460824344790*(((z&~(x&~y))&~t)|((y^(x&z))&t)) + 6148914691236517211*(((y^(x&(y|z)))&~t)|((~(x|~y)|~(x^(y^z)))&t)) + 12297829382473034411*(((y^~(x&~z))&~t)|((x&(y&z))&t)) + 15030680356355930937*((~(x^(~y&z))&~t)|(((x|~y)&~(y^z))&t)) + 17763531330238827490*((((y&z)|(x&(y|z)))&~t)|(((x&z)|(y&~z))&t)) + 15030680356355930947*(((~x|(y&z))&~t)|(((y&~z)^(x|(y^z)))&t)) + 6832127434707241334*((~(~x&(y|z))&~t)|((z^~(x|(~y&z)))&t)) + 3416063717353620677*((((x&y)^(x^(~y|z)))&~t)|((~(x&~y)&~(y^z))&t)) + 3416063717353620670*(((x|z)&~t)|(((x|y)&~(y^z))&t))
+
+#print(sprovr.simplify(expr))
+#print(sprov.simplify(expr))

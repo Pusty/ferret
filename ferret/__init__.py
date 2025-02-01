@@ -8,6 +8,7 @@ from .mbablastprovider import MBABlastEqualityProvider
 from .qsynthprovider import QSynthEqualityProvider
 from .qsynthdbserver import startQSynthDBServer, stopQSynthDBServer
 from .boolminprovider import BooleanMinifierProvider
+from .simbaprovider import SiMBAEqualityProvider
 from .ferret import * 
 
 

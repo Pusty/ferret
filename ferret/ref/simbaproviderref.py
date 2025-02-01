@@ -6,11 +6,6 @@ import os
 import sys
 
 PROJECT_PATH = os.getcwd()
-TABLE_PATH = os.path.join(PROJECT_PATH,"qsynth_table", "test_table")
-
-
-
-PROJECT_PATH = os.getcwd()
 
 SiMBA_PATH = os.path.join(PROJECT_PATH,"thirdparty", "SiMBA")
 

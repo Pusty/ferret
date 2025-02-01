@@ -6,7 +6,6 @@ from pyeda.inter import exprvar, expr2truthtable, espresso_tts
 from sympy import groebner, GF, symbols, prod, Mul, Add, Pow, Poly, Symbol, factor_list
 from sympy.logic.boolalg import to_dnf, Not, And, Or, Xor, BooleanTrue, BooleanFalse, simplify_logic
 
-
 def sympy_to_pyeda(expr):
     if isinstance(expr, Or):
         return pyeda.boolalg.expr.Or(*[sympy_to_pyeda(x) for x in expr.args], simplify=False)
@@ -160,6 +159,20 @@ def _sympy_to_ast(expr):
         print("_sympy_to_ast", type(expr))
 
 
+def boolminifier(ast):
+    sympyVars = {varname: symbols(varname) for varname in get_vars_from_ast(ast)}
+
+    if len(sympyVars) < 2: return (False, [])
+    
+    sympyTerm = map_ast(ast, lambda x: sympyVars[x], lambda y: True if y == -1 else False, {
+    CallType.AND: lambda a, b: a&b,
+    CallType.OR: lambda a, b: a|b,
+    CallType.XOR: lambda a, b: a^b,
+    CallType.NOT: lambda a: ~a,
+    })
+
+    return _sympy_to_ast(simplify_logic(minimize(sympyTerm, [sympyVars[v] for v in sympyVars])))
+
 class BooleanMinifierProvider(EqualityProvider):
 
     def __init__(self):
@@ -182,20 +195,10 @@ class BooleanMinifierProvider(EqualityProvider):
 
         if not is_boolean: return (False, [])
 
-        sympyVars = {varname: symbols(varname) for varname in get_vars_from_ast(ast)}
-
-        if len(sympyVars) < 2: return (False, [])
+        # TODO: Apply this on boolean subexpressions?
         
-        sympyTerm = map_ast(ast, lambda x: sympyVars[x], lambda y: True if y == -1 else False, {
-        CallType.AND: lambda a, b: a&b,
-        CallType.OR: lambda a, b: a|b,
-        CallType.XOR: lambda a, b: a^b,
-        CallType.NOT: lambda a: ~a,
-        })
 
-        sympyMin = simplify_logic(minimize(sympyTerm, [sympyVars[v] for v in sympyVars]))
-
-        return (True, [_sympy_to_ast(sympyMin)])
+        return (True, [boolminifier(ast)])
 
     def failed(self, ast):
         pass

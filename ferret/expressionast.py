@@ -99,12 +99,7 @@ class VarNode(Node):
 class I64Node(Node):
     def __init__(self, value):
         self.type = NodeType.I64
-        value = value & 0xffffffffffffffff
-        if value > 0x7fffffffffffffff:
-            value = value-0x10000000000000000
-        if value < -0x7fffffffffffffff:
-            value = value+0x10000000000000000
-        self.value = value
+        self.value = sign_i64(value)
     def __getitem__(self, key):
         return [self.type, self.value][key]
     def __str__(self):
@@ -229,3 +224,35 @@ def str_to_ast(astStr, varNames):
     if isinstance(res, int):
         res = I64Node(res)
     return res
+
+def sign_i64(value):
+    value = value & 0xffffffffffffffff
+    if value > 0x7fffffffffffffff:
+        value = value-0x10000000000000000
+    if value < -0x7fffffffffffffff:
+        value = value+0x10000000000000000
+    return value
+
+def is_linear(ast):
+    IS_CONSTANT = 0
+    LINEAR = 1
+    NON_LINEAR = 2
+
+    linear_condition = lambda a, b:  \
+        IS_CONSTANT if a == IS_CONSTANT and b == IS_CONSTANT else \
+        (LINEAR if ((a == LINEAR and b == IS_CONSTANT) or (b == LINEAR and a == IS_CONSTANT) ) else NON_LINEAR)
+
+    val = map_ast(ast, lambda x: LINEAR, lambda y: IS_CONSTANT, {
+    CallType.ADD: lambda a, b: max(a, b),
+    CallType.SUB: lambda a, b: max(a, b),
+    CallType.MUL: lambda a, b: linear_condition(a, b),
+    CallType.AND: lambda a, b: max(a, b),
+    CallType.OR: lambda a, b: max(a, b),
+    CallType.XOR: lambda a, b: max(a, b),
+    CallType.SHL: lambda a, b: IS_CONSTANT if a == IS_CONSTANT and b == IS_CONSTANT else (LINEAR if (((a == LINEAR) or (a == IS_CONSTANT)) and b == IS_CONSTANT) else NON_LINEAR),
+    CallType.SHR: lambda a, b: NON_LINEAR,
+    CallType.NOT: lambda a: a,
+    CallType.NEG: lambda a: a,
+    })
+
+    return val != NON_LINEAR

@@ -18,18 +18,18 @@ def test_eqprovs_sample(sample, equalityprovders):
     cost_before = ferret.ast_cost(expr)
 
     # Apply (max) 8 runs of rules and equality providers then get cost out
-    egg = ferret.create_graph("multiset")
+    egg = ferret.create_graph("basic")
 
 
     # These settings are for bitvec_basic
-    #ferret.iter_simplify(egg, expr, equalityprovders, 4)
+    ferret.iter_simplify(egg, expr, equalityprovders, 4)
     #ferret.all_simplify(egg, expr, equalityprovders, 3)
 
     #egg.run = lambda x: None
     #ferret.all_simplify(egg, expr, equalityprovders, 3, 10000, 500)
 
     # These settings are for bitvec_multiset
-    ferret.iter_simplify(egg, expr, equalityprovders, 20, 50000)
+    #ferret.iter_simplify(egg, expr, equalityprovders, 20, 50000)
     #ferret.all_simplify(egg, expr, equalityprovders, 3, 10000, 10000)
 
     expr_out = egg.extract(expr)
@@ -107,8 +107,10 @@ def run_all_tests():
     ferret.startQSynthDBServer()
     qsynth = ferret.QSynthEqualityProvider(dbserver=True)
 
-
+    
+    
     simbaref = ferret.SiMBAEqualityProviderReference()
+    simba = ferret.SiMBAEqualityProvider()
 
     amount = 100
     dataset = lambda: mbablast_dataset.getDataset(amount, skip=0)
@@ -119,32 +121,31 @@ def run_all_tests():
     #benchmark_eqprovs(dataset(), [], amount)
     #benchmark_eqprovs(dataset(), [llp], amount)
     #benchmark_eqprovs(dataset(), [mbabp], amount)
-    benchmark_eqprovs(dataset(), [qsynth], amount)
-    #benchmark_eqprovs(dataset(), [simbaref], amount)
+    #benchmark_eqprovs(dataset(), [qsynth], amount)
+    benchmark_eqprovs(dataset(), [simba], amount)
 
-    """
-    benchmark_eqprovs(dataset(), [llp, mbabp], amount)
-    benchmark_eqprovs(dataset(), [qsynth, llp], amount)
-    benchmark_eqprovs(dataset(), [qsynth, mbabp], amount)
+    #benchmark_eqprovs(dataset(), [llp, mbabp], amount)
+    #benchmark_eqprovs(dataset(), [qsynth, llp], amount)
+    #benchmark_eqprovs(dataset(), [qsynth, mbabp], amount)
 
-    benchmark_eqprovs(dataset(), [simbaref, llp], amount)
-    benchmark_eqprovs(dataset(), [simbaref, qsynth], amount)
-    benchmark_eqprovs(dataset(), [simbaref, mbabp], amount)
+    benchmark_eqprovs(dataset(), [simba, llp], amount)
+    benchmark_eqprovs(dataset(), [simba, qsynth], amount)
+    benchmark_eqprovs(dataset(), [simba, mbabp], amount)
 
-    benchmark_eqprovs(dataset(), [qsynth, mbabp, llp], amount)
-    benchmark_eqprovs(dataset(), [simbaref, mbabp, llp], amount)
-    benchmark_eqprovs(dataset(), [qsynth, simbaref, llp], amount)
-    benchmark_eqprovs(dataset(), [qsynth, mbabp, simbaref], amount)
+    #benchmark_eqprovs(dataset(), [qsynth, mbabp, llp], amount)
+    benchmark_eqprovs(dataset(), [simba, mbabp, llp], amount)
+    benchmark_eqprovs(dataset(), [qsynth, simba, llp], amount)
+    benchmark_eqprovs(dataset(), [qsynth, mbabp, simba], amount)
 
     benchmark_eqprovs(dataset(), [qsynth, mbabp, llp, simbaref], amount)
-    """
+    benchmark_eqprovs(dataset(), [qsynth, mbabp, llp, simba], amount)
 
 
     #test_eqprovs(dataset(), [])
     #test_eqprovs(dataset(), [llp])
     #test_eqprovs(dataset(), [mbabp])
     #test_eqprovs(dataset(), [qsynth])
-    #test_eqprovs(dataset(), [simbaref])
+    #test_eqprovs(dataset(), [simba])
 
     #test_eqprovs(dataset(), [qsynth])
     #test_eqprovs(dataset(), [llp, qsynth])
@@ -233,9 +234,9 @@ if __name__ == '__main__':
     #run_simba_test()
     #run_multiset_test()
 
-    run_nastyexpr_test()
+    #run_nastyexpr_test()
 
-    #run_all_tests()
+    run_all_tests()
 
     """
     import cProfile as profile

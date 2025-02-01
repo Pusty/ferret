@@ -14,7 +14,17 @@ g = VarNode("g")
 h = VarNode("h")
 i = VarNode("i")
 l = VarNode("l")
-expr = (((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((a&d)&e)&f)&g)&h)&i)&l)^(((((((b&d)&e)&f)&g)&h)&i)&l))^(((((((c&d)&e)&f)&g)&h)&i)&l))^((((((a&d)&e)&f)&g)&h)&i))^((((((b&d)&e)&f)&g)&h)&i))^((((((c&d)&e)&f)&g)&h)&i))^((((((a&d)&e)&f)&g)&h)&l))^((((((b&d)&e)&f)&g)&h)&l))^((((((c&d)&e)&f)&g)&h)&l))^((((((a&d)&e)&f)&g)&i)&l))^((((((b&d)&e)&f)&g)&i)&l))^((((((c&d)&e)&f)&g)&i)&l))^((((((a&d)&f)&g)&h)&i)&l))^((((((b&d)&f)&g)&h)&i)&l))^((((((c&d)&f)&g)&h)&i)&l))^((((((a&e)&f)&g)&h)&i)&l))^((((((b&e)&f)&g)&h)&i)&l))^((((((c&e)&f)&g)&h)&i)&l))^(((((a&d)&e)&f)&g)&h))^(((((b&d)&e)&f)&g)&h))^(((((c&d)&e)&f)&g)&h))^(((((a&d)&e)&f)&g)&i))^(((((b&d)&e)&f)&g)&i))^(((((c&d)&e)&f)&g)&i))^(((((a&d)&f)&g)&h)&i))^(((((b&d)&f)&g)&h)&i))^(((((c&d)&f)&g)&h)&i))^(((((a&e)&f)&g)&h)&i))^(((((b&e)&f)&g)&h)&i))^(((((c&e)&f)&g)&h)&i))^(((((a&d)&e)&f)&g)&l))^(((((b&d)&e)&f)&g)&l))^(((((c&d)&e)&f)&g)&l))^(((((a&d)&f)&g)&h)&l))^(((((b&d)&f)&g)&h)&l))^(((((c&d)&f)&g)&h)&l))^(((((a&e)&f)&g)&h)&l))^(((((b&e)&f)&g)&h)&l))^(((((c&e)&f)&g)&h)&l))^(((((a&d)&f)&g)&i)&l))^(((((b&d)&f)&g)&i)&l))^(((((c&d)&f)&g)&i)&l))^(((((a&e)&f)&g)&i)&l))^(((((b&e)&f)&g)&i)&l))^(((((c&e)&f)&g)&i)&l))^(((((a&d)&e)&h)&i)&l))^(((((b&d)&e)&h)&i)&l))^(((((c&d)&e)&h)&i)&l))^(((((a&f)&g)&h)&i)&l))^(((((b&f)&g)&h)&i)&l))^(((((c&f)&g)&h)&i)&l))^((((a&d)&e)&f)&g))^((((b&d)&e)&f)&g))^((((c&d)&e)&f)&g))^((((a&d)&f)&g)&h))^((((b&d)&f)&g)&h))^((((c&d)&f)&g)&h))^((((a&e)&f)&g)&h))^((((b&e)&f)&g)&h))^((((c&e)&f)&g)&h))^((((a&d)&f)&g)&i))^((((b&d)&f)&g)&i))^((((c&d)&f)&g)&i))^((((a&e)&f)&g)&i))^((((b&e)&f)&g)&i))^((((c&e)&f)&g)&i))^((((a&d)&e)&h)&i))^((((b&d)&e)&h)&i))^((((c&d)&e)&h)&i))^((((a&f)&g)&h)&i))^((((b&f)&g)&h)&i))^((((c&f)&g)&h)&i))^((((a&d)&f)&g)&l))^((((b&d)&f)&g)&l))^((((c&d)&f)&g)&l))^((((a&e)&f)&g)&l))^((((b&e)&f)&g)&l))^((((c&e)&f)&g)&l))^((((a&d)&e)&h)&l))^((((b&d)&e)&h)&l))^((((c&d)&e)&h)&l))^((((a&f)&g)&h)&l))^((((b&f)&g)&h)&l))^((((c&f)&g)&h)&l))^((((a&d)&e)&i)&l))^((((b&d)&e)&i)&l))^((((c&d)&e)&i)&l))^((((a&f)&g)&i)&l))^((((b&f)&g)&i)&l))^((((c&f)&g)&i)&l))^((((a&d)&h)&i)&l))^((((b&d)&h)&i)&l))^((((c&d)&h)&i)&l))^((((a&e)&h)&i)&l))^((((b&e)&h)&i)&l))^((((c&e)&h)&i)&l))^(((a&d)&f)&g))^(((b&d)&f)&g))^(((c&d)&f)&g))^(((a&e)&f)&g))^(((b&e)&f)&g))^(((c&e)&f)&g))^(((a&d)&e)&h))^(((b&d)&e)&h))^(((c&d)&e)&h))^(((a&f)&g)&h))^(((b&f)&g)&h))^(((c&f)&g)&h))^(((a&d)&e)&i))^(((b&d)&e)&i))^(((c&d)&e)&i))^(((a&f)&g)&i))^(((b&f)&g)&i))^(((c&f)&g)&i))^(((a&d)&h)&i))^(((b&d)&h)&i))^(((c&d)&h)&i))^(((a&e)&h)&i))^(((b&e)&h)&i))^(((c&e)&h)&i))^(((a&d)&e)&l))^(((b&d)&e)&l))^(((c&d)&e)&l))^(((a&f)&g)&l))^(((b&f)&g)&l))^(((c&f)&g)&l))^(((a&d)&h)&l))^(((b&d)&h)&l))^(((c&d)&h)&l))^(((a&e)&h)&l))^(((b&e)&h)&l))^(((c&e)&h)&l))^(((a&d)&i)&l))^(((b&d)&i)&l))^(((c&d)&i)&l))^(((a&e)&i)&l))^(((b&e)&i)&l))^(((c&e)&i)&l))^(((d&h)&i)&l))^((a&d)&e))^((b&d)&e))^((c&d)&e))^((a&f)&g))^((b&f)&g))^((c&f)&g))^((a&d)&h))^((b&d)&h))^((c&d)&h))^((a&e)&h))^((b&e)&h))^((c&e)&h))^((a&d)&i))^((b&d)&i))^((c&d)&i))^((a&e)&i))^((b&e)&i))^((c&e)&i))^((d&h)&i))^((a&d)&l))^((b&d)&l))^((c&d)&l))^((a&e)&l))^((b&e)&l))^((c&e)&l))^((d&h)&l))^((d&i)&l))^((h&i)&l))^(a&d))^(b&d))^(c&d))^(a&e))^(b&e))^(c&e))^(d&h))^(d&i))^(h&i))^(d&l))^(h&l))^(i&l))^d)^h)^i)^l)
+
+x = VarNode("x")
+y = VarNode("y")
+z = VarNode("z")
+#expr = (((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((a&d)&e)&f)&g)&h)&i)&l)^(((((((b&d)&e)&f)&g)&h)&i)&l))^(((((((c&d)&e)&f)&g)&h)&i)&l))^((((((a&d)&e)&f)&g)&h)&i))^((((((b&d)&e)&f)&g)&h)&i))^((((((c&d)&e)&f)&g)&h)&i))^((((((a&d)&e)&f)&g)&h)&l))^((((((b&d)&e)&f)&g)&h)&l))^((((((c&d)&e)&f)&g)&h)&l))^((((((a&d)&e)&f)&g)&i)&l))^((((((b&d)&e)&f)&g)&i)&l))^((((((c&d)&e)&f)&g)&i)&l))^((((((a&d)&f)&g)&h)&i)&l))^((((((b&d)&f)&g)&h)&i)&l))^((((((c&d)&f)&g)&h)&i)&l))^((((((a&e)&f)&g)&h)&i)&l))^((((((b&e)&f)&g)&h)&i)&l))^((((((c&e)&f)&g)&h)&i)&l))^(((((a&d)&e)&f)&g)&h))^(((((b&d)&e)&f)&g)&h))^(((((c&d)&e)&f)&g)&h))^(((((a&d)&e)&f)&g)&i))^(((((b&d)&e)&f)&g)&i))^(((((c&d)&e)&f)&g)&i))^(((((a&d)&f)&g)&h)&i))^(((((b&d)&f)&g)&h)&i))^(((((c&d)&f)&g)&h)&i))^(((((a&e)&f)&g)&h)&i))^(((((b&e)&f)&g)&h)&i))^(((((c&e)&f)&g)&h)&i))^(((((a&d)&e)&f)&g)&l))^(((((b&d)&e)&f)&g)&l))^(((((c&d)&e)&f)&g)&l))^(((((a&d)&f)&g)&h)&l))^(((((b&d)&f)&g)&h)&l))^(((((c&d)&f)&g)&h)&l))^(((((a&e)&f)&g)&h)&l))^(((((b&e)&f)&g)&h)&l))^(((((c&e)&f)&g)&h)&l))^(((((a&d)&f)&g)&i)&l))^(((((b&d)&f)&g)&i)&l))^(((((c&d)&f)&g)&i)&l))^(((((a&e)&f)&g)&i)&l))^(((((b&e)&f)&g)&i)&l))^(((((c&e)&f)&g)&i)&l))^(((((a&d)&e)&h)&i)&l))^(((((b&d)&e)&h)&i)&l))^(((((c&d)&e)&h)&i)&l))^(((((a&f)&g)&h)&i)&l))^(((((b&f)&g)&h)&i)&l))^(((((c&f)&g)&h)&i)&l))^((((a&d)&e)&f)&g))^((((b&d)&e)&f)&g))^((((c&d)&e)&f)&g))^((((a&d)&f)&g)&h))^((((b&d)&f)&g)&h))^((((c&d)&f)&g)&h))^((((a&e)&f)&g)&h))^((((b&e)&f)&g)&h))^((((c&e)&f)&g)&h))^((((a&d)&f)&g)&i))^((((b&d)&f)&g)&i))^((((c&d)&f)&g)&i))^((((a&e)&f)&g)&i))^((((b&e)&f)&g)&i))^((((c&e)&f)&g)&i))^((((a&d)&e)&h)&i))^((((b&d)&e)&h)&i))^((((c&d)&e)&h)&i))^((((a&f)&g)&h)&i))^((((b&f)&g)&h)&i))^((((c&f)&g)&h)&i))^((((a&d)&f)&g)&l))^((((b&d)&f)&g)&l))^((((c&d)&f)&g)&l))^((((a&e)&f)&g)&l))^((((b&e)&f)&g)&l))^((((c&e)&f)&g)&l))^((((a&d)&e)&h)&l))^((((b&d)&e)&h)&l))^((((c&d)&e)&h)&l))^((((a&f)&g)&h)&l))^((((b&f)&g)&h)&l))^((((c&f)&g)&h)&l))^((((a&d)&e)&i)&l))^((((b&d)&e)&i)&l))^((((c&d)&e)&i)&l))^((((a&f)&g)&i)&l))^((((b&f)&g)&i)&l))^((((c&f)&g)&i)&l))^((((a&d)&h)&i)&l))^((((b&d)&h)&i)&l))^((((c&d)&h)&i)&l))^((((a&e)&h)&i)&l))^((((b&e)&h)&i)&l))^((((c&e)&h)&i)&l))^(((a&d)&f)&g))^(((b&d)&f)&g))^(((c&d)&f)&g))^(((a&e)&f)&g))^(((b&e)&f)&g))^(((c&e)&f)&g))^(((a&d)&e)&h))^(((b&d)&e)&h))^(((c&d)&e)&h))^(((a&f)&g)&h))^(((b&f)&g)&h))^(((c&f)&g)&h))^(((a&d)&e)&i))^(((b&d)&e)&i))^(((c&d)&e)&i))^(((a&f)&g)&i))^(((b&f)&g)&i))^(((c&f)&g)&i))^(((a&d)&h)&i))^(((b&d)&h)&i))^(((c&d)&h)&i))^(((a&e)&h)&i))^(((b&e)&h)&i))^(((c&e)&h)&i))^(((a&d)&e)&l))^(((b&d)&e)&l))^(((c&d)&e)&l))^(((a&f)&g)&l))^(((b&f)&g)&l))^(((c&f)&g)&l))^(((a&d)&h)&l))^(((b&d)&h)&l))^(((c&d)&h)&l))^(((a&e)&h)&l))^(((b&e)&h)&l))^(((c&e)&h)&l))^(((a&d)&i)&l))^(((b&d)&i)&l))^(((c&d)&i)&l))^(((a&e)&i)&l))^(((b&e)&i)&l))^(((c&e)&i)&l))^(((d&h)&i)&l))^((a&d)&e))^((b&d)&e))^((c&d)&e))^((a&f)&g))^((b&f)&g))^((c&f)&g))^((a&d)&h))^((b&d)&h))^((c&d)&h))^((a&e)&h))^((b&e)&h))^((c&e)&h))^((a&d)&i))^((b&d)&i))^((c&d)&i))^((a&e)&i))^((b&e)&i))^((c&e)&i))^((d&h)&i))^((a&d)&l))^((b&d)&l))^((c&d)&l))^((a&e)&l))^((b&e)&l))^((c&e)&l))^((d&h)&l))^((d&i)&l))^((h&i)&l))^(a&d))^(b&d))^(c&d))^(a&e))^(b&e))^(c&e))^(d&h))^(d&i))^(h&i))^(d&l))^(h&l))^(i&l))^d)^h)^i)^l)
+
+expr = (((~(((-(~((~(0x48+(-((((~((~0x48)&((~0x48)|2)))^(~(0x48&((~(((~((~(((~(0x48&2))|0x48)^(~(((~(0x48&2))|0x48)|((-((-(-((~(0x48&2))|0x48)))+(-(~(-0xff)))))+1)))))&1))&(-((~((~(0x48&2))|0x48))&1)))&1))+(-((~((~(0x48&2))|0x48))&1))))))^(~((y^(y+0xfe))&1)))+(-y)))))&((~((0x48+(-((((~((~0x48)&((~0x48)|2)))^(~(0x48&((~(((~((~(((~(0x48&2))|0x48)^(~(((~(0x48&2))|0x48)|((-((~(0x48&2))|0x48))+0xff)))))&1))&(-((~((~(0x48&2))|0x48))&1)))&1))+(-((~((~(0x48&2))|0x48))&1))))))^(~((y^(y+0xfe))&1)))+(-y))))|2))^2))))+(-z))+0xfe))+(~(-(0xff+2))))+0xff)
+ 
+#expr = x + y + 5
+
+#expr = 10*((x&4)&(2*(x&2))) + 4*(x&4&~((2*(x&2))))
 
 print("Input Cost", ast_cost(expr))
 
@@ -31,13 +41,34 @@ boolmin = BooleanMinifierProvider()
 
 
 # cost 37
-egg = create_graph("basic")
-iter_simplify(egg, expr, [llp, mbabp, qsynth, simbaref, boolmin], 7, 50000)
+egg = create_graph("multiset")
+ast, last_cost = egg.simplify(expr)
+#iter_simplify(egg, expr, [llp, mbabp, qsynth, simbaref, boolmin], 7, 50000)
 print("Node Size", egg.nodecount())
 expr_out = egg.extract(expr)
 print("Output Cost", ast_cost(expr_out))
 print(expr_out)
 
+merge_by_output(egg, expr)
+expr_out = egg.extract(expr)
+print("Output Cost After Merge", ast_cost(expr_out))
+print(expr_out)
+
+merge_by_output(egg, expr, True)
+expr_out = egg.extract(expr)
+print("Output Cost After Merge 2", ast_cost(expr_out))
+print(expr_out)
+
+
+ast, last_cost = egg.simplify(expr)
+ast, last_cost = egg.simplify(expr)
+ast, last_cost = egg.simplify(expr)
+ast, last_cost = egg.simplify(expr)
+ast, last_cost = egg.simplify(expr)
+print("Node Size", egg.nodecount())
+expr_out = egg.extract(expr)
+print("Output Cost", ast_cost(expr_out))
+print(expr_out)
 
 
 #egg = create_graph("basic")
