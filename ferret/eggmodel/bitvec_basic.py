@@ -148,6 +148,7 @@ class EggBasic(EggModel):
         # register basic rules
         self.egraph.run_program(*_get_bitvec_basic_rules())
         self.display_step = []
+        self.union_cache = set()
 
 
     def _parse_term_dag(self, termdag, term):
@@ -242,6 +243,8 @@ class EggBasic(EggModel):
 
     def union(self, astA, astB):
         #self.egraph.run_program(*parse_program("(union "+self._ast_to_egg_str(astA)+" "+self._ast_to_egg_str(astB)+")"))
+        if (astA, astB) in self.union_cache or (astB, astA) in self.union_cache: return
+        self.union_cache.add((astA, astB))
         self.egraph.run_program(ActionCommand(Union(DUMMY_SPAN, self._ast_to_egg(astA), self._ast_to_egg(astB))))
 
     

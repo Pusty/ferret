@@ -63,10 +63,10 @@ class SiMBAEqualityProvider(EqualityProvider):
                 line[indx] = 1
             basis.append(line)
 
-        A = np.asmatrix(basis, dtype=np.int64)
-        b = np.asmatrix(signatureVector, dtype=np.int64).T
-        r = np.linalg.solve(A, b)
-        l = [round(i) for i in np.array(r).reshape(-1,).tolist()]
+        A = sympy.Matrix(basis)
+        b = sympy.Matrix(signatureVector)
+        r = A.solve(b).T
+        l = [round(i) for i in r.tolist()[0]]
         return l
     
     def inner_simplify(self, signatureVector, expr_vars):
@@ -90,7 +90,6 @@ class SiMBAEqualityProvider(EqualityProvider):
                     term = CallNode(CallType.MUL, [I64Node(coeff), term])
             terms.append(term)
         simplify_result = self._add_all(terms)
-
         return simplify_result
 
     def pyeda_to_ast(self, expr):
@@ -254,9 +253,9 @@ class SiMBAEqualityProvider(EqualityProvider):
             else: 
                 return True
             
-        if non_linear and not verify_ast(original, r, {"timeout": 100, "unsafe": True, "precision": 64}): 
+        if non_linear and not verify_ast(original, r, {"timeout": 250, "unsafe": True, "precision": 8}): 
             return True
-        
+         
         options.append((ast_cost(r), r))
         return True
 
@@ -269,7 +268,6 @@ class SiMBAEqualityProvider(EqualityProvider):
 
         if not self.apply_func(options, self.apply_simplify, oast, non_linear):
             return (False, [])
-
         if len(get_vars_from_ast(options[0][1])) > 2:
             if not self.apply_func(options, self.apply_simplify, oast, non_linear):
                 return (False, [])
@@ -281,6 +279,8 @@ class SiMBAEqualityProvider(EqualityProvider):
         res = options[0][1]
 
         if res == oast:
+            if len(options) > 1:
+                return (True, [options[1][1]])
             return (False, [])
 
         return (True, [res])

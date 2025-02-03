@@ -21,8 +21,11 @@ def test_eqprovs_sample(sample, equalityprovders):
     egg = ferret.create_graph("basic")
 
 
+    ferret.eclass_simplify(egg, expr, equalityprovders, 5)
+
+
     # These settings are for bitvec_basic
-    ferret.iter_simplify(egg, expr, equalityprovders, 4)
+    #ferret.iter_simplify(egg, expr, equalityprovders, 5)
     #ferret.all_simplify(egg, expr, equalityprovders, 3)
 
     #egg.run = lambda x: None
@@ -123,6 +126,7 @@ def run_all_tests():
     #benchmark_eqprovs(dataset(), [mbabp], amount)
     #benchmark_eqprovs(dataset(), [qsynth], amount)
     benchmark_eqprovs(dataset(), [simba], amount)
+    benchmark_eqprovs(dataset(), [simbaref], amount)
 
     #benchmark_eqprovs(dataset(), [llp, mbabp], amount)
     #benchmark_eqprovs(dataset(), [qsynth, llp], amount)
@@ -236,6 +240,7 @@ if __name__ == '__main__':
 
     #run_nastyexpr_test()
 
+    
     run_all_tests()
 
     """

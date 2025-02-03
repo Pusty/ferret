@@ -13,6 +13,7 @@ class EggMultiset(EggModel):
         self.display_step = []
         self.let_cache = {}
         self.let_index = 0
+        self.union_cache = set()
 
         egg_rewrites = """
         (datatype*
@@ -503,6 +504,10 @@ class EggMultiset(EggModel):
         self.egraph.run_program(ActionCommand(Expr_(DUMMY_SPAN, self._ast_to_egg(ast))))
 
     def union(self, astA, astB):
+
+        if (astA, astB) in self.union_cach or (astB, astA) in self.union_cache: return
+
+        self.union_cache.add((astA, astB))
 
         if astA in self.let_cache:
             pastA = Var(DUMMY_SPAN, self.let_cache[astA])

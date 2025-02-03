@@ -61,20 +61,41 @@ def eval_provider(prov):
 
 
 
-sprovr  = SiMBAEqualityProviderReference()
+sprovr  = SiMBAEqualityProviderReference(checkLinear=True)
 eval_provider(sprovr)
 
 sprov  = SiMBAEqualityProvider()
 eval_provider(sprov)
 
 
-#x = VarNode("x")
-#y = VarNode("y")
-#z = VarNode("z")
+
+x = VarNode("x")
+y = VarNode("y")
+z = VarNode("z")
 #t = VarNode("t")
 
 #print(sprov.simplify(2*~(x|~y) - (x^y) + 2*x))
 #expr = 13664254869414482676*((~(x^y)&~t)|(~(x|(y|z))&t)) + 6832127434707241344*((~(y^z)&~t)|((~z&(x^y))&t)) + 15713893099826655077*(((z^~(x|(y&z)))&~t)|(~(~x|(~y|z))&t)) + 10248191152060862011*((~(x^(y&z))&~t)|(((x^y)&~(x^z))&t)) + 3416063717353620669*(((z&(x|y))&~t)|((y^(x|z))&t)) + 10248191152060862013*(((z^~(x|(~y&z)))&~t)|((y^(~x|(~y|z)))&t)) + 1366425486941448269*((~(x&(y&z))&~t)|((x^z)&t)) + 4099276460824344790*(((z&~(x&~y))&~t)|((y^(x&z))&t)) + 6148914691236517211*(((y^(x&(y|z)))&~t)|((~(x|~y)|~(x^(y^z)))&t)) + 12297829382473034411*(((y^~(x&~z))&~t)|((x&(y&z))&t)) + 15030680356355930937*((~(x^(~y&z))&~t)|(((x|~y)&~(y^z))&t)) + 17763531330238827490*((((y&z)|(x&(y|z)))&~t)|(((x&z)|(y&~z))&t)) + 15030680356355930947*(((~x|(y&z))&~t)|(((y&~z)^(x|(y^z)))&t)) + 6832127434707241334*((~(~x&(y|z))&~t)|((z^~(x|(~y&z)))&t)) + 3416063717353620677*((((x&y)^(x^(~y|z)))&~t)|((~(x&~y)&~(y^z))&t)) + 3416063717353620670*(((x|z)&~t)|(((x|y)&~(y^z))&t))
 
-#print(sprovr.simplify(expr))
-#print(sprov.simplify(expr))
+
+#expr = 1 * ((x | y) & ~(y ^ z)) + 1 * ~(x | (y | z)) - 2 * ~(~x | (y | z)) - 2 * (x & (y & z))
+#expr = y * 3 + x * 6 + (y & x) * -8 + ((~x | y) + 1) * 3 + -2 * (y & x) & -2
+#expr = -2 ^ x & y #!= -2 + (x & y)
+#expr = 11 * ((~y & x) * x) + (-12 + (1 + (~y & x) * -22)) * x + 11 * ((y & x) - x + x) # != -22 * x + 22 * (x & y)
+expr = 4611686018427387902 + ((y | ~x) + 1) * 3
+
+res = sprovr.simplify(expr)
+worked, arr = res
+if worked:
+    refval = arr[0]
+    print("Found", ferret.test_oracle_equality(expr, refval), refval)
+else:
+    print(res)
+
+res = sprov.simplify(expr)
+worked, arr = res
+if worked:
+    refval = arr[0]
+    print("Found", ferret.test_oracle_equality(expr, refval), refval)
+else:
+    print(res)

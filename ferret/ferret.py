@@ -63,7 +63,7 @@ def _process_subexpr_for_merge(subexpr, inpMappings, classes, classesMin, newly_
 # Merge subexpressions of a graph (given a root expression) by their output behavior
 # Verify correctness using SMT Solver
 # Enrich by trying to minimize though combinations (e.g. making new constant combinations)
-def merge_by_output(egg, root, enrich=False):
+def merge_by_output(egg, root, enrich=False, enrichLimit=-1):
     classes = {}
     classesMin = {}
     bestSubexprs = []
@@ -78,10 +78,12 @@ def merge_by_output(egg, root, enrich=False):
     #print("Amount of eclasses", len(bestSubexprs))
     if enrich:
         for i in range(len(bestSubexprs)):
-            #print(i, len(bestSubexprs))
             a = bestSubexprs[i]
             for j in range(i, len(bestSubexprs)):
                 b = bestSubexprs[j]
+
+                # limit turns it into eclass x constants only if to many eclasses exist
+                if enrichLimit != -1 and len(bestSubexprs)>enrichLimit and not isinstance(b, I64Node): continue
 
                 #if not isinstance(a, I64Node) and not isinstance(b, I64Node): continue
                 if isinstance(a, I64Node) and isinstance(b, I64Node):
@@ -102,18 +104,23 @@ def merge_by_output(egg, root, enrich=False):
                     _process_subexpr_for_merge(CallNode(CallType.NEG, [a]), inpMappings, classes, classesMin, True)
                     _process_subexpr_for_merge(CallNode(CallType.NOT, [a]), inpMappings, classes, classesMin, True)
 
+    output = set()
     # Go through all classes and union them if applicable
     for key in classes:
-        # skip unique classes
-        if len(classes[key]) == 1 and classesMin[key][1] == next(iter(classes[key])): continue
         # union with minimal element
         min_element = classesMin[key][1]
+        output.add(min_element)
+        # skip unique classes
+        if len(classes[key]) == 1 and classesMin[key][1] == next(iter(classes[key])): continue
         for astB in classes[key]:
             if astB == min_element:
                 continue # skip minimal to minimal merge
             # verify using SMT solver that things are equal (or at least check there isn't obvious counter example)
             if verify_ast(min_element, astB, {"timeout": 100, "unsafe": True, "precision": 64}):
                 egg.union(min_element, astB)
+            else:
+                output.add(astB)
+    return output
 
 def iter_simplify(egg, ast, eqprovs=[], inner_max=20, max_nodes=25000):
     init_cost = egg.cost(ast)
@@ -196,6 +203,32 @@ def all_simplify(egg, ast, eqprovs=[], inner_max=5, max_nodes=500, max_subexpr=2
 
     last_cost = egg.cost(ast)
     return init_cost, last_cost
+
+def eclass_simplify(egg, ast, eqprovs=[], inner_max=5, max_nodes=25000):
+    init_cost = egg.cost(ast)
+
+    last_amount_nodes = 0
+    already = set()
+
+    for i in range(inner_max):
+        if len(eqprovs) > 0:
+            options = merge_by_output(egg, ast, enrich=False, enrichLimit=50)
+            for option in options:
+                uid = hash(option)
+                if uid in already: continue
+                already.add(uid)
+                for eqprov in eqprovs:
+                    apply_eqprov(egg, eqprov, egg.json_to_ast(option))
+        egg.run(1)
+        amount_nodes = egg.nodecount()
+        # probably explodes
+        if amount_nodes > max_nodes: break
+        # saturated
+        if last_amount_nodes == amount_nodes: break
+        last_amount_nodes = amount_nodes
+    last_cost = egg.cost(ast)
+    return init_cost, last_cost
+
 
 def test_oracle_equality(astA, astB, N=10, doAssert=False, debug=[]):
     varsA = get_vars_from_ast(astA)

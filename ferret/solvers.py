@@ -58,8 +58,8 @@ try:
     import bitwuzla
     import time
 
-    def _ast_to_bitwuzla(tm, sortbv, bw_vars, ast):
-        return map_ast(ast, lambda x: bw_vars[x], lambda y: tm.mk_bv_value(sortbv, y), {
+    def _ast_to_bitwuzla(tm, sortbv, bw_vars, ast, precision):
+        return map_ast(ast, lambda x: bw_vars[x], lambda y: tm.mk_bv_value(sortbv, y&((1<<precision)-1)), {
         CallType.ADD: lambda a, b: tm.mk_term(bitwuzla.Kind.BV_ADD, [a, b]),
         CallType.SUB: lambda a, b: tm.mk_term(bitwuzla.Kind.BV_SUB, [a, b]),
         CallType.MUL: lambda a, b: tm.mk_term(bitwuzla.Kind.BV_MUL, [a, b]),
@@ -99,8 +99,8 @@ try:
 
         bw_vars = {x:tm.mk_const(sortbv, x) for x in var_names}
 
-        bwA = _ast_to_bitwuzla(tm, sortbv, bw_vars, astA)
-        bwB = _ast_to_bitwuzla(tm, sortbv, bw_vars, astB)
+        bwA = _ast_to_bitwuzla(tm, sortbv, bw_vars, astA, precision)
+        bwB = _ast_to_bitwuzla(tm, sortbv, bw_vars, astB, precision)
 
         bw.assert_formula(tm.mk_term(bitwuzla.Kind.DISTINCT, [bwA, bwB]))
         bw.configure_terminator(BitwuzlaTimeTerminator(timeout))

@@ -226,33 +226,64 @@ def str_to_ast(astStr, varNames):
     return res
 
 def sign_i64(value):
-    value = value & 0xffffffffffffffff
-    if value > 0x7fffffffffffffff:
-        value = value-0x10000000000000000
-    if value < -0x7fffffffffffffff:
-        value = value+0x10000000000000000
+    value = value & ((1<<64)-1)
+    value = (value ^ (1<<63)) - (1<<63)
     return value
 
 def is_linear(ast):
-    IS_CONSTANT = 0
-    LINEAR = 1
-    NON_LINEAR = 2
 
-    linear_condition = lambda a, b:  \
-        IS_CONSTANT if a == IS_CONSTANT and b == IS_CONSTANT else \
-        (LINEAR if ((a == LINEAR and b == IS_CONSTANT) or (b == LINEAR and a == IS_CONSTANT) ) else NON_LINEAR)
+    IS_LOGICAL_CONSTANT = 0
+    IS_LOGICAL = 1
+    IS_CONSTANT = 2
+    IS_ARITHMETIC = 3
+    IS_NON_LINEAR = 4
 
-    val = map_ast(ast, lambda x: LINEAR, lambda y: IS_CONSTANT, {
-    CallType.ADD: lambda a, b: max(a, b),
-    CallType.SUB: lambda a, b: max(a, b),
-    CallType.MUL: lambda a, b: linear_condition(a, b),
-    CallType.AND: lambda a, b: max(a, b),
-    CallType.OR: lambda a, b: max(a, b),
-    CallType.XOR: lambda a, b: max(a, b),
-    CallType.SHL: lambda a, b: IS_CONSTANT if a == IS_CONSTANT and b == IS_CONSTANT else (LINEAR if (((a == LINEAR) or (a == IS_CONSTANT)) and b == IS_CONSTANT) else NON_LINEAR),
-    CallType.SHR: lambda a, b: NON_LINEAR,
-    CallType.NOT: lambda a: a,
-    CallType.NEG: lambda a: a,
+    def mul_check(a, b):
+        if a == IS_NON_LINEAR or b == IS_NON_LINEAR:
+            return IS_NON_LINEAR
+        if (a == IS_CONSTANT or b == IS_CONSTANT):
+            return IS_ARITHMETIC
+        if (a == IS_LOGICAL_CONSTANT or b == IS_LOGICAL_CONSTANT):
+            return IS_ARITHMETIC
+        return IS_NON_LINEAR
+    
+    def bit_check(a, b):
+        if a == IS_NON_LINEAR or b == IS_NON_LINEAR:
+            return IS_NON_LINEAR
+        if a == IS_ARITHMETIC or b == IS_ARITHMETIC:
+            return IS_NON_LINEAR
+        # no non True/False constants in boolean expressions
+        if a == IS_CONSTANT or b == IS_CONSTANT:
+            return IS_NON_LINEAR
+        return IS_LOGICAL
+    
+    def shl_check(a, b):
+        if a == IS_NON_LINEAR or b == IS_NON_LINEAR:
+            return IS_NON_LINEAR
+        if (a == IS_CONSTANT or a == IS_LOGICAL_CONSTANT) and (b == IS_CONSTANT or b == IS_LOGICAL_CONSTANT): 
+            return IS_CONSTANT
+        if (b == IS_CONSTANT or b == IS_LOGICAL_CONSTANT):
+            return IS_ARITHMETIC
+        return IS_NON_LINEAR
+    
+    def arith_check(a, b):
+        if a == IS_NON_LINEAR or b == IS_NON_LINEAR:
+            return IS_NON_LINEAR
+        if (a == IS_CONSTANT or a == IS_LOGICAL_CONSTANT) and (b == IS_CONSTANT or b == IS_LOGICAL_CONSTANT): 
+            return IS_CONSTANT
+        return IS_ARITHMETIC
+
+    val = map_ast(ast, lambda x: IS_LOGICAL, lambda y: IS_LOGICAL_CONSTANT if (y == 0 or y == -1) else IS_CONSTANT, {
+    CallType.ADD: lambda a, b: arith_check(a, b),
+    CallType.SUB: lambda a, b: arith_check(a, b),
+    CallType.MUL: lambda a, b: mul_check(a, b),
+    CallType.AND: lambda a, b: bit_check(a, b),
+    CallType.OR: lambda a, b: bit_check(a, b),
+    CallType.XOR: lambda a, b: bit_check(a, b),
+    CallType.SHL: lambda a, b: shl_check(a, b),
+    CallType.SHR: lambda a, b: IS_NON_LINEAR,
+    CallType.NOT: lambda a: bit_check(a, IS_LOGICAL_CONSTANT),
+    CallType.NEG: lambda a: arith_check(a, IS_CONSTANT),
     })
 
-    return val != NON_LINEAR
+    return val != IS_NON_LINEAR
