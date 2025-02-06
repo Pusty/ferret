@@ -7,6 +7,7 @@ import test.MBABlast_dataset as mbablast_dataset
 import test.MBAObfuscator_dataset as mbaobf_dataset
 import test.MBASolver_dataset as mbasol_dataset
 
+THREAD_COUNT = 10
 
 def test_eqprovs_sample(sample, equalityprovders):
     dataset_name, expr, gexpr = sample
@@ -88,7 +89,7 @@ def test_eqprovs_sample_wrapper(tupleThingy):
 
 def benchmark_eqprovs(dataset_generator, equalityprovders, totalsamples=-1):
     print("EqProvs: ", ','.join([eqprov.name() for eqprov in equalityprovders]))
-    with Pool(10) as p:
+    with Pool(THREAD_COUNT) as p:
         results = list(tqdm.tqdm(p.imap(test_eqprovs_sample_wrapper, ([d, equalityprovders] for d in dataset_generator)), total=totalsamples))
 
         sample_size = len(results)
@@ -214,7 +215,7 @@ def run_multiset_test():
     dataset = [x for x in dataset_class.getDataset(amount, skip=0)]
 
     
-    #with Pool(10) as p:
+    #with Pool(THREAD_COUNT) as p:
     #    results = list(tqdm.tqdm(p.imap(run_multiset_test_lambda, ([d, i] for i, d in enumerate(dataset))), total=amount*dataset_class.getDatasetCount()))
     if True:
         results = [run_multiset_test_lambda((d, i)) for i, d in enumerate(dataset)]

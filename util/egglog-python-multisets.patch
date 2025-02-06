@@ -1,0 +1,36 @@
+diff --git a/Cargo.toml b/Cargo.toml
+index 5525a39..f95d98c 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -1,6 +1,6 @@
+ [package]
+ name = "egglog_python"
+-version = "8.0.1"
++version = "8.0.1-dev1"
+ edition = "2021"
+ 
+ # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+@@ -12,8 +12,9 @@ crate-type = ["cdylib"]
+ pyo3 = { version = "0.22.5", features = ["extension-module"] }
+ 
+ # https://github.com/egraphs-good/egglog/compare/ceed816e9369570ffed9feeba157b19471dda70d...main
+-egglog = { git = "https://github.com/egraphs-good/egglog", rev = "b0db06832264c9b22694bd3de2bdacd55bbe9e32" }
+-# egglog = { path = "../egg-smol" }
++#egglog = { git = "https://github.com/egraphs-good/egglog", rev = "993582f34ed4ec7653ae54d15c69b920f24b3f55" }
++egglog = { path = "../egglog" }
++
+ # egglog = { git = "https://github.com/oflatt/egg-smol", branch = "oflatt-fast-terms" }
+ # egglog = { git = "https://github.com/saulshanabrook/egg-smol", rev = "a555b2f5e82c684442775cc1a5da94b71930113c" }
+ egraph-serialize = { version = "0.2.0", features = ["serde", "graphviz"] }
+diff --git a/pyproject.toml b/pyproject.toml
+index 69c6c39..8605848 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -6,6 +6,7 @@ build-backend = "maturin"
+ name = "egglog"
+ description = "e-graphs in Python built around the the egglog rust library"
+ readme = "README.md"
++dynamic = ["version"]
+ license = { text = "MIT" }
+ requires-python = ">=3.10"
+ classifiers = [

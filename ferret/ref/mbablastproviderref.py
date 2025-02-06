@@ -12,9 +12,6 @@ sys.path.append(os.path.join(
     MBA_BLAST_PATH, "tools"
 ))
 
-import truthtable_simplify as mba_blast
-
-
 import re
 import traceback
 
@@ -36,9 +33,8 @@ def get_entire_bitwise(vnumber):
 
     return bitList
 
-mba_blast.get_entire_bitwise = get_entire_bitwise
-# depreciated
-mba_blast.np.int = int
+
+
 
 
 from ..equalityprovider import EqualityProvider
@@ -48,6 +44,10 @@ import ast as ast_module
 class MBABlastEqualityProviderReference(EqualityProvider):
 
     def __init__(self):
+        import truthtable_simplify as mba_blast
+        mba_blast.get_entire_bitwise = get_entire_bitwise
+        # depreciated
+        mba_blast.np.int = int
         pass
 
     def simplify(self, ast):

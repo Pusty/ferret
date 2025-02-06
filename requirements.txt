@@ -1,0 +1,7 @@
+graphviz==0.20.3
+llvmlite==0.43.0
+numpy>=1.21.5
+plyvel==1.5.1
+sympy>=1.13.3
+tqdm>=4.66.4
+z3_solver>=4.10.2.0

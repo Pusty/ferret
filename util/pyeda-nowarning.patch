@@ -1,0 +1,13 @@
+  GNU nano 8.1                                      pyeda-nowarning.patch                                               diff --git a/setup.py b/setup.py
+index 6aa683d..e9ba7fc 100644
+--- a/setup.py
++++ b/setup.py
+@@ -186,7 +186,7 @@ if sys.platform == "win32":
+     ]
+
+ EXT_MODULES = [
+-    Extension("pyeda.boolalg.espresso", **ESPRESSO),
++    Extension("pyeda.boolalg.espresso", **ESPRESSO, extra_compile_args=["-Wno-incompatible-pointer-types"]),
+     Extension("pyeda.boolalg.exprnode", **EXPRNODE),
+     Extension("pyeda.boolalg.picosat", **PICOSAT),
+ ]
