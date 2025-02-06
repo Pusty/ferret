@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Tested on Ubuntu 24.04 on Digital Ocean Droplets
+# activate ~/.venv after to run tests and evaluation
 
 # ~/ferret/util/install.sh
 cd ..
@@ -71,7 +72,9 @@ cd ..
 # install pyEDA (newer C compilers need this fix for espresso to compile)
 git clone --depth 1 --branch v0.29.0 https://github.com/cjdrake/pyeda
 cd pyeda
-
+git apply ../ferret/util/pyeda-nowarning.patch
+pip install .
+cd ..
 
 # install third party libraries (used for datasets)
 
