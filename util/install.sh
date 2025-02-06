@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Tested on Ubuntu 24.04 on Digital Ocean Droplets
+
 # ~/ferret/util/install.sh
 cd ..
 cd ..
@@ -74,6 +76,9 @@ cd pyeda
 # install third party libraries (used for datasets)
 
 cd ferret
+pip install -r requirements.txt
+
+
 cd thirdparty
 
 git clone -n https://github.com/softsec-unh/MBA-Blast.git
