@@ -177,7 +177,6 @@ def all_simplify(egg, ast, eqprovs=[], inner_max=5, max_nodes=500, max_subexpr=2
                 options.append(subexpr)
             
             # limit the amount of (new) subexpressions to process
-            # TODO: If this stays, seed this to make it deterministic
             # Ideally we wouldn't want to limit this at all, but
             # the amount of connection explodes fast
             if max_subexpr != -1 and len(options) >= max_subexpr:
@@ -230,6 +229,9 @@ def eclass_simplify(egg, ast, eqprovs=[], inner_max=5, max_nodes=25000):
     return init_cost, last_cost
 
 
+class FerretOracleEqualityException(Exception):
+    pass
+
 def test_oracle_equality(astA, astB, N=10, doAssert=False, debug=[]):
     varsA = get_vars_from_ast(astA)
     varsB = get_vars_from_ast(astB)
@@ -242,7 +244,11 @@ def test_oracle_equality(astA, astB, N=10, doAssert=False, debug=[]):
         evalA = eval_ast(astA, varMap)
         evalB = eval_ast(astB, varMap)
         if doAssert:
-            assert evalA == evalB , str(astA) + " != " + str(astB) +" for "+str(varMap)+" resulting in "+str((evalA, evalB))+" # "+str(debug)
+            condition = evalA == evalB
+            msg = str(astA) + " != " + str(astB) +" for "+str(varMap)+" resulting in "+str((evalA, evalB))+" # "+str(debug)
+            if not condition: 
+                raise FerretOracleEqualityException(msg)
+            #assert condition, msg
         else:
             if evalA != evalB: return False
     return True

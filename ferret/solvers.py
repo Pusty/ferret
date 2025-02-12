@@ -9,6 +9,17 @@ def verify_ast(astA, astB, options):
         return solver_functions["z3"](astA, astB, options)
     raise Exception("No solver installed (either z3 or bitwuzla)")
 
+safetyOverwrite = None
+def solver_safety_overwrite(overwrite):
+    global safetyOverwrite
+    safetyOverwrite = overwrite
+
+def solver_selection_overwrite(overwrite):
+    global solver_functions
+    keys = list((solver_functions).keys())
+    for key in keys:
+        if key != overwrite:
+            del solver_functions[key]
 
 try:
     import z3
@@ -31,6 +42,8 @@ try:
 
         precision = options.get("precision", 64)
         unsafe = options.get("unsafe", True)
+        if solver_safety_overwrite != None:
+            unsafe = solver_safety_overwrite
         timeout = options.get("timeout", 250)
 
         var_names = get_vars_from_ast(astA) + get_vars_from_ast(astB)
