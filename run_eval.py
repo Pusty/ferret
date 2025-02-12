@@ -145,7 +145,7 @@ if __name__ == '__main__':
         except ferret.FerretOracleEqualityException as e:
             amount_failed += 1
             print(index, ",", "failed")
-            print(index, ",", "error_log", ",", str(e))
+            print(index, ",", "error_log", ",", repr(e))
         index += 1
     print("###################################################")
     print("amount", ",", amount)
