@@ -244,8 +244,8 @@ def test_oracle_equality(astA, astB, N=10, doAssert=False, debug=[]):
         evalB = eval_ast(astB, varMap)
         if doAssert:
             condition = evalA == evalB
-            msg = str(astA) + " != " + str(astB) +" for "+str(varMap)+" resulting in "+str((evalA, evalB))+" # "+str(debug)
             if not condition: 
+                msg = str(astA) + " != " + str(astB) +" for "+str(varMap)+" resulting in "+str((evalA, evalB))+" # "+str(debug)
                 raise FerretOracleEqualityException(msg)
             #assert condition, msg
         else:
