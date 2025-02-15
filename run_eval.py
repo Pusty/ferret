@@ -1,9 +1,6 @@
 import ferret
 import ferret.solvers
 
-import test.MBABlast_dataset as mbablast_dataset
-import test.MBAObfuscator_dataset as mbaobf_dataset
-import test.MBASolver_dataset as mbasol_dataset
 import random
 
 import argparse
@@ -33,9 +30,18 @@ def applyStrategy(name, egg, expr, eqprovs, options):
 def getDataset(name):
     amount = -1
     skip = 0
-    if name == "mba-blast": return mbablast_dataset.getDataset(amount, skip=skip)
-    elif name == "mba-obfuscator": return mbaobf_dataset.getDataset(amount, skip=skip)
-    elif name == "mba-solver": return mbasol_dataset.getDataset(amount, skip=skip)
+    if name == "mba-blast": 
+        import test.MBABlast_dataset as mbablast_dataset
+        return mbablast_dataset.getDataset(amount, skip=skip)
+    elif name == "mba-obfuscator":
+        import test.MBAObfuscator_dataset as mbaobf_dataset
+        return mbaobf_dataset.getDataset(amount, skip=skip)
+    elif name == "mba-solver": 
+        import test.MBASolver_dataset as mbasol_dataset
+        return mbasol_dataset.getDataset(amount, skip=skip)
+    elif name == "msimba":
+        import test.MSiMBA_dataset as msimba_dataset
+        return msimba_dataset.getDataset(amount, skip=skip)
     else:
         raise Exception("Unknown Dataset '"+str(name)+"'")
 
@@ -62,7 +68,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog="run_eval")
     parser.add_argument("--seed", help="Random seed", type=int)
     parser.add_argument("--eqprov", nargs='*', help="Equality Providers", type=str, default=[], choices={"llvm", "mba-blast", "qsynth", "simba", "boolmin"})
-    parser.add_argument("--dataset", help="Datasets", type=str, choices={"mba-blast", "mba-obfuscator", "mba-solver"}, required=True)
+    parser.add_argument("--dataset", help="Datasets", type=str, choices={"mba-blast", "mba-obfuscator", "mba-solver", "msimba"}, required=True)
     parser.add_argument("--strategy", help="Datasets", type=str, choices={"iterative", "all-subsets", "best-subsets"}, required=True)
 
     # options for strategy

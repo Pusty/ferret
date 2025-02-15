@@ -104,6 +104,11 @@ cd SiMBA
 git checkout 228179970f5906ed763afb33fc8649de2846696e
 cd ..
 
+git clone -n https://github.com/mazeworks-security/MSiMBA.git
+cd MSiMBA
+git checkout 59d3e12dee832e9ded53f00cdfbbb1581f2eb8d2
+cd ..
+
 cd ..
 
 # in ~/ferret

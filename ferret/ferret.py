@@ -27,7 +27,6 @@ def apply_eqprov(egg, eqprov, ast):
     else:
         eqprov.failed(ast)
 
-
 def _process_subexpr_for_merge(subexpr, inpMappings, classes, classesMin, newly_created):
     outs = []
     vars = get_vars_from_ast(subexpr)

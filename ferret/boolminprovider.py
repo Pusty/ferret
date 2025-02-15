@@ -162,7 +162,7 @@ def _sympy_to_ast(expr):
 def boolminifier(ast):
     sympyVars = {varname: symbols(varname) for varname in get_vars_from_ast(ast)}
 
-    if len(sympyVars) < 2: return (False, [])
+    if len(sympyVars) < 2: return None
     
     sympyTerm = map_ast(ast, lambda x: sympyVars[x], lambda y: True if y == -1 else False, {
     CallType.AND: lambda a, b: a&b,
@@ -197,8 +197,10 @@ class BooleanMinifierProvider(EqualityProvider):
 
         # TODO: Apply this on boolean subexpressions?
         
+        res = boolminifier(ast)
+        if res == None: return (False, [])
 
-        return (True, [boolminifier(ast)])
+        return (True, [res])
 
     def failed(self, ast):
         pass

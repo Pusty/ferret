@@ -505,7 +505,7 @@ class EggMultiset(EggModel):
 
     def union(self, astA, astB):
 
-        if (astA, astB) in self.union_cach or (astB, astA) in self.union_cache: return
+        if (astA, astB) in self.union_cache or (astB, astA) in self.union_cache: return
 
         self.union_cache.add((astA, astB))
 

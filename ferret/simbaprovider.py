@@ -81,7 +81,6 @@ class SiMBAEqualityProvider(EqualityProvider):
             index = sum(1<<i for i in var_indxs)
             coeff = coeffs[index]
             if coeff == 0: continue
-
             term = self._and_all(var_indxs, expr_vars)
             if coeff != 1:
                 if coeff == -1:
@@ -252,8 +251,8 @@ class SiMBAEqualityProvider(EqualityProvider):
                 return False
             else: 
                 return True
-            
-        if non_linear and not verify_ast(original, r, {"timeout": 250, "unsafe": True, "precision": 8}): 
+        
+        if non_linear and not verify_ast(original, r, {"timeout": 250, "unsafe": False, "precision": 64}): 
             return True
          
         options.append((ast_cost(r), r))
