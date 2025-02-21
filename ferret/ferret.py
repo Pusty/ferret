@@ -210,8 +210,10 @@ def eclass_simplify(egg, ast, eqprovs=[], inner_max=5, max_nodes=25000):
 
     for i in range(inner_max):
         if len(eqprovs) > 0:
-            options = merge_by_output(egg, ast, enrich=False, enrichLimit=50)
-            for option in options:
+            #options = merge_by_output(egg, ast, enrich=False, enrichLimit=50)
+            #for option in options:
+            for subexpr in egg.extract_all_subexprs(ast, 100000, best=True):
+                option = egg.json_to_ast(subexpr)
                 uid = hash(option)
                 if uid in already: continue
                 already.add(uid)

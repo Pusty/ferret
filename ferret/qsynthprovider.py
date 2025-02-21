@@ -43,6 +43,7 @@ class QSynthEqualityProvider(EqualityProvider):
         self.verifyReducedPrecision = verifyReducedPrecision
         self.verifyTimeout = verifyTimeout
         self.verifyEnd = verifyEnd
+        self.cache = {}
 
     def _verify_connected(self):
         if self.dbserver and self.db.table == None:
@@ -78,7 +79,9 @@ class QSynthEqualityProvider(EqualityProvider):
     def name(self):
         return "QSynthEqualityProvider"
     
-    def _lookup_ast(self, ast, var_remapping, placeholders):
+    def _lookup_ast(self, ast, var_remapping, placeholders, cache):
+        hashcode = hash((ast, tuple(var_remapping.keys()), tuple(var_remapping.values())))
+        if hashcode in cache: return cache[hashcode]
         #print("Lookup", ast)
         r = self._lookup(ast, var_remapping)
         makePlaceholder = False
@@ -137,9 +140,9 @@ class QSynthEqualityProvider(EqualityProvider):
             tmpVarName = "placeholder_"+hex(hash(ast_to_str(exprAst))&0xffffffff)
             placeholders[tmpVarName] = exprAst
             #print("Replace",ast_to_str(exprAst),"with", tmpVarName)
-
             return VarNode(tmpVarName)
         else:
+            cache[hashcode] = exprAst
             return exprAst
 
     def _remap_vars(self, ast):
@@ -160,17 +163,17 @@ class QSynthEqualityProvider(EqualityProvider):
 
         return var_remapping
 
-    def _synthetize(self, ast):
+    def _synthetize(self, ast, cache):
         #print("Synth", ast)
         var_remapping = self._remap_vars(ast)
         # Too many variables, can't simplify
         if var_remapping == None: return ast
         #print("Remap", var_remapping)
         placeholders = {}
-        r = map_ast_bfs(ast, lambda type, values: self._lookup_ast(CallNode(type, values), var_remapping, placeholders))
+        r = map_ast_bfs(ast, lambda type, values: self._lookup_ast(CallNode(type, values), var_remapping, placeholders, cache))
         #print(r)
         if r != ast:
-            r = self._synthetize(r)
+            r = self._synthetize(r, cache)
 
         return map_ast(r, lambda x: placeholders[x] if x in placeholders else VarNode(x), lambda y: I64Node(y), lambda type, args: CallNode(type, args))
 
@@ -180,10 +183,15 @@ class QSynthEqualityProvider(EqualityProvider):
 
     def simplify(self, ast):
 
+         # flush cache for more consistent evaluation results
+         # use self.cache for provider "global" cache
+         # middle ground could be flushing it on every new egg instance
+        cache = {}
+
         self._verify_connected() # check if connected to db if needed
 
         # remap table vars to expression vars
-        simplified = self._synthetize(ast)
+        simplified = self._synthetize(ast, cache)
         #print("=>", simplified)
 
         # SMT verify overall simplification is correct

@@ -109,7 +109,7 @@ class I64Node(Node):
             return self.type == other.type and self.value == other.value
         return False
     def __hash__(self):
-        return hash((self.type, self.value))
+        return hash((self.type, str(self.value)))
 
 from functools import cached_property
 
@@ -127,7 +127,6 @@ class CallNode(Node):
             return self.type == other.type and self.value == other.value and self.children == other.children
         return False
     
-
     def __hash__(self):
         return self._cached_hash
 

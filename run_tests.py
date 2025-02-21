@@ -24,6 +24,7 @@ def test_eqprovs_sample(sample, equalityprovders):
 
 
     ferret.eclass_simplify(egg, expr, equalityprovders, 3)
+    #ferret.iter_simplify(egg, expr, equalityprovders, 5)
 
 
     # These settings are for bitvec_basic
@@ -115,14 +116,13 @@ def run_all_tests():
     
     
     simbaref = ferret.SiMBAEqualityProviderReference()
-    simba = ferret.SiMBAEqualityProvider()
+    simba = ferret.SiMBAEqualityProvider(allowNonLinear=False)
 
     boolmin = ferret.BooleanMinifierProvider()
 
-    amount = 250
-    dataset = lambda: msimba_dataset.getDataset(amount, skip=0)
+    amount = 1000
+    dataset = lambda: msimba_dataset.getDataset(1000, skip=0)
     amount = amount * msimba_dataset.getDatasetCount()
-
 
 
     #benchmark_eqprovs(dataset(), [], amount)
@@ -260,4 +260,3 @@ if __name__ == '__main__':
     st.sort_stats('cumtime')
     st.print_stats() # and other methods like print_callees, print_callers, etc.
     """
-
