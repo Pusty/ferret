@@ -97,29 +97,42 @@ def minimize(formula, x, depthLeft=5, negate=False):
         trivial = False
         for i in range(len(x)):
             trivial = trivial or (g == x[i]*x[i] + x[i])
-        if trivial: continue
+        if trivial: 
+            continue
         
         factors = []
-        
+
         for factor, _ in factor_list(g)[1]:
             p = Poly(factor, x, domain=GF(2))
             if p.is_linear or depthLeft <= 0:
+                dec = alg_decode_term(factor)
                 if negate:
-                    factors.append(Not(alg_decode_term(factor)))
+                    factors.append(Not(dec))
                 else:
-                    factors.append(alg_decode_term(factor))
+                    factors.append(dec)
             else:
-                dec = alg_decode_term(factor+1)
+                dec = alg_decode_term(factor)
                 mini = minimize(dec, x, depthLeft-1, not negate)
-                output.append(mini)
+                if negate:
+                    mini = Not(mini)
+                if not negate:
+                    factors.append(Not(mini))
+                else:
+                    factors.append(mini) 
+
         if negate:
             output.append(Or(*factors))
         else:
             output.append(And(*factors))
+    
     if negate:
-        return And(*output)
+        res = And(*output)
     else:
-        return Or(*output)
+        res = Or(*output)
+    
+    #rint("solve(", formula, "!=", res,")")
+
+    return res
     
     
 from .expressionast import *
@@ -171,7 +184,9 @@ def boolminifier(ast):
     CallType.NOT: lambda a: ~a,
     })
 
-    return _sympy_to_ast(simplify_logic(minimize(sympyTerm, [sympyVars[v] for v in sympyVars])))
+    res = minimize(sympyTerm, [sympyVars[v] for v in sympyVars]) 
+    #print(res)
+    return _sympy_to_ast(simplify_logic(res))
 
 class BooleanMinifierProvider(EqualityProvider):
 
