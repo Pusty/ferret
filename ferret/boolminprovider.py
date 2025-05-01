@@ -181,7 +181,7 @@ def boolminifier(ast):
     CallType.AND: lambda a, b: a&b,
     CallType.OR: lambda a, b: a|b,
     CallType.XOR: lambda a, b: a^b,
-    CallType.NOT: lambda a: ~a,
+    CallType.NOT: lambda a: False if a == True else (True if a == False else ~a),
     })
 
     res = minimize(sympyTerm, [sympyVars[v] for v in sympyVars]) 

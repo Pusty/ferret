@@ -43,7 +43,7 @@ try:
         precision = options.get("precision", 64)
         unsafe = options.get("unsafe", True)
         if solver_safety_overwrite != None:
-            unsafe = solver_safety_overwrite
+            unsafe = not solver_safety_overwrite
         timeout = options.get("timeout", 250)
 
         var_names = get_vars_from_ast(astA) + get_vars_from_ast(astB)
@@ -98,6 +98,9 @@ try:
         precision = options.get("precision", 64)
         unsafe = options.get("unsafe", True)
         timeout = options.get("timeout", 250)
+        
+        if safetyOverwrite != None:
+            unsafe = not safetyOverwrite
 
         tm = bitwuzla.TermManager()
         options = bitwuzla.Options()

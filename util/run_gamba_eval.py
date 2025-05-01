@@ -1,115 +1,58 @@
-import ferret
-import ferret.solvers
-
 import random
-
 import argparse
 import time
 import psutil
 import os
 import tracemalloc
 
+import sys
+import os.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 
-def applyStrategy(name, egg, expr, eqprovs, options):
-    if name == "iterative":
-        inner_max = options.get("inner_max", 5)
-        max_nodes = options.get("max_nodes", 25000)
-        ferret.iter_simplify(egg, expr, eqprovs, inner_max, max_nodes)
-    elif name == "all-subsets":
-        inner_max = options.get("inner_max", 3)
-        max_nodes = options.get("max_nodes", 500)
-        max_subexpr = options.get("max_subexpr", 250)
-        ferret.all_simplify(egg, expr, eqprovs, inner_max, max_nodes, max_subexpr)
-    elif name == "best-subsets":
-        inner_max = options.get("inner_max", 5)
-        max_nodes = options.get("max_nodes", 25000)
-        ferret.eclass_simplify(egg, expr, eqprovs, inner_max, max_nodes)
-    else:
-        raise Exception("Unknown Strategy '"+str(name)+"'")
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, "test")))
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, os.path.pardir, "GAMBA", "src")))
+
+# GAMBA import
+import simplify_general
+
+import ferret
 
 def getDataset(name):
     amount = -1
     skip = 0
     if name == "mba-blast": 
-        import test.MBABlast_dataset as mbablast_dataset
+        import MBABlast_dataset as mbablast_dataset
         return mbablast_dataset.getDataset(amount, skip=skip)
     elif name == "mba-obfuscator":
-        import test.MBAObfuscator_dataset as mbaobf_dataset
+        import MBAObfuscator_dataset as mbaobf_dataset
         return mbaobf_dataset.getDataset(amount, skip=skip)
     elif name == "mba-solver": 
-        import test.MBASolver_dataset as mbasol_dataset
+        import MBASolver_dataset as mbasol_dataset
         return mbasol_dataset.getDataset(amount, skip=skip)
     elif name == "msimba":
-        import test.MSiMBA_dataset as msimba_dataset
+        import MSiMBA_dataset as msimba_dataset
         return msimba_dataset.getDataset(amount, skip=skip)
     else:
         raise Exception("Unknown Dataset '"+str(name)+"'")
 
-def getEqProv(name):
-    if name == "llvm": return ferret.LLVMLiteEqualityProvider()
-    elif name == "mba-blast": return ferret.MBABlastEqualityProvider()
-    elif name == "qsynth": return ferret.QSynthEqualityProvider()
-    elif name == "simba": return ferret.SiMBAEqualityProvider()
-    elif name == "boolmin": return ferret.BooleanMinifierProvider()
-    else:
-        raise Exception("Unknown Equality Provider '"+str(name)+"'")
-    
-def apply(expr, args, strategy_options):
-    egg = ferret.create_graph(args.mode)
-    if args.norun:
-        egg.run = lambda x: None
 
-    applyStrategy(args.strategy, egg, expr, eqprovs, strategy_options)
-    if args.merge:
-        ferret.merge_by_output(egg, expr, True)
-    return egg.extract(expr)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(prog="run_eval")
+    parser = argparse.ArgumentParser(prog="run_gamba_eval")
     parser.add_argument("--seed", help="Random seed", type=int)
-    parser.add_argument("--eqprov", nargs='*', help="Equality Providers", type=str, default=[], choices={"llvm", "mba-blast", "qsynth", "simba", "boolmin"})
     parser.add_argument("--dataset", help="Datasets", type=str, choices={"mba-blast", "mba-obfuscator", "mba-solver", "msimba"}, required=True)
-    parser.add_argument("--strategy", help="Datasets", type=str, choices={"iterative", "all-subsets", "best-subsets"}, required=True)
 
     # only process index % nth == 0
     parser.add_argument("--only_nth", type=int)
-
-    # options for strategy
-    parser.add_argument("--inner_max", type=int)
-    parser.add_argument("--max_nodes", type=int)
-    parser.add_argument("--max_subexpr", type=int)
-
-
-    parser.add_argument("--smt",  help="SMT Solver", type=str, default="default", choices={"z3", "bitwuzla", "default"})
-    parser.add_argument("--mode",  help="E-Graph Mode of Operation", type=str, default="basic", choices={"basic", "multiset"})
-    # unsafe vs safe
-    parser.add_argument("--safe",  help="Strict SMT Verification",action='store_true')
-    parser.add_argument("--merge",  help="Merge Same I/O at the end",action='store_true')
-    parser.add_argument("--norun",  help="Disable E-Graph Rule application",action='store_true')
-
     args = parser.parse_args()
 
     if args.seed != None:
         random.seed(args.seed)
 
 
-    if args.smt != "default":
-        ferret.solvers.solver_selection_overwrite(args.smt)
-    
-    if args.safe:
-        ferret.solvers.solver_safety_overwrite(args.safe)
-
-    strategy_options = {}
-    if args.inner_max != None:
-        strategy_options["inner_max"] = args.inner_max
-    if args.max_nodes != None:
-        strategy_options["max_nodes"] = args.max_nodes
-    if args.max_subexpr != None:
-        strategy_options["max_subexpr"] = args.max_subexpr
-
     dataset = getDataset(args.dataset)
-    eqprovs = [getEqProv(eqprovname) for eqprovname in set(args.eqprov)]
-
+   
     amount = 0
     index = 0
     cost_groundtruth_accum = 0
@@ -118,6 +61,14 @@ if __name__ == '__main__':
     time_accum = 0
     amount_failed = 0
 
+    exitFunc = sys.exit
+    def exit_overwrite(x):
+        if isinstance(x, (int, float, complex)) and not isinstance(x, bool):
+            exitFunc(x)
+        else:
+            print(x)
+
+    sys.exit = exit_overwrite
     print(args, flush=True)
     print("###################################################", flush=True)
     for sample in dataset:
@@ -136,12 +87,16 @@ if __name__ == '__main__':
             mem_before = psutil.Process(os.getpid()).memory_info().rss
             time_before = time.process_time_ns()
             tracemalloc.start()
-            expr_out = apply(expr, args, strategy_options)
+
+            # Apply General GAMBA without verification
+            simpl = simplify_general.simplify_mba(str(expr), 64, False, False, None)
+
             current_memory, peak_memory = tracemalloc.get_traced_memory()
             tracemalloc.stop()
             time_elapsed = time.process_time_ns()-time_before
             mem_after = psutil.Process(os.getpid()).memory_info().rss
 
+            expr_out = ferret.str_to_ast(simpl, ferret.get_vars_from_ast(expr))
             cost_after = ferret.ast_cost(expr_out)
             ferret.assert_oracle_equality(gexpr, expr_out)
 

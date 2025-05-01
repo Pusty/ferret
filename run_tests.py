@@ -22,12 +22,13 @@ def test_eqprovs_sample(sample, equalityprovders):
     # Apply (max) 8 runs of rules and equality providers then get cost out
     egg = ferret.create_graph("basic")
 
-
+    egg.run = lambda x: None
     ferret.eclass_simplify(egg, expr, equalityprovders, 3)
     #ferret.iter_simplify(egg, expr, equalityprovders, 5)
 
 
     # These settings are for bitvec_basic
+
     #ferret.iter_simplify(egg, expr, equalityprovders, 5)
     #ferret.all_simplify(egg, expr, equalityprovders, 3)
 
@@ -121,8 +122,8 @@ def run_all_tests():
     boolmin = ferret.BooleanMinifierProvider()
 
     amount = 1000
-    dataset = lambda: msimba_dataset.getDataset(1000, skip=0)
-    amount = amount * msimba_dataset.getDatasetCount()
+    dataset = lambda: mbasol_dataset.getDataset(1000, skip=0)
+    amount = amount * mbasol_dataset.getDatasetCount()
 
 
     #benchmark_eqprovs(dataset(), [], amount)
@@ -130,7 +131,7 @@ def run_all_tests():
     #benchmark_eqprovs(dataset(), [mbabp], amount)
     #benchmark_eqprovs(dataset(), [qsynth], amount)
     #benchmark_eqprovs(dataset(), [simba], amount)
-    #benchmark_eqprovs(dataset(), [simbaref], amount)
+    benchmark_eqprovs(dataset(), [boolmin], amount)
 
     #benchmark_eqprovs(dataset(), [llp, mbabp], amount)
     #benchmark_eqprovs(dataset(), [qsynth, llp], amount)
@@ -148,7 +149,7 @@ def run_all_tests():
     #benchmark_eqprovs(dataset(), [qsynth, mbabp, llp, simbaref], amount)
     #benchmark_eqprovs(dataset(), [qsynth, mbabp, llp, simba], amount)
 
-    benchmark_eqprovs(dataset(), [qsynth, mbabp, llp, simba, boolmin], amount)
+    #benchmark_eqprovs(dataset(), [qsynth, mbabp, llp, simba, boolmin], amount)
 
 
     #test_eqprovs(dataset(), [])
@@ -238,6 +239,8 @@ def run_multiset_test():
 
 if __name__ == '__main__':
 
+    #dataset = [x for x in mbasol_dataset.getDataset(-1, skip=0)]
+    #print(dataset[3010])
     #run_llvmlite_test()
     #run_mbablast_test()
     #run_qsynth_test()
@@ -245,9 +248,15 @@ if __name__ == '__main__':
     #run_multiset_test()
 
     #run_nastyexpr_test()
-
     
     run_all_tests()
+
+    #boolmin = ferret.BooleanMinifierProvider()
+    #z = ferret.VarNode("z")
+    #x = ferret.VarNode("x")
+    #y = ferret.VarNode("y")
+    #print(boolmin.simplify(y ^ ~(x | ~z)))
+    # y ^ ~(x | ~z) != x | y | ~z
 
     """
     import cProfile as profile
